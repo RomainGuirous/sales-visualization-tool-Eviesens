@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 from sqlalchemy import create_engine
+import re
 pd.set_option('display.max_rows', 500)
 
 
@@ -29,48 +30,82 @@ def database_to_dict(table_name, connection) :
         dict_res[i[table_name+'_nom']]=i[table_name+'_id']
     return dict_res
 
+#a partir d'un filepath, renvoie le numero de mois et l'annee correspondante
+def str_to_month_year(s) :
+    l_mois={
+    "janvier" : "01","fevrier" : "02", "février" : "02", "mars" : "03","avril" : "04","mai" : "05","juin" : "06",
+    "juillet" : "07","aout" : "08", "août" : "08", "septembre" : "09", "octobre" : "10", "novembre" : "11", "decembre" : "12", "décembre" : "12"
+    }
+    low_s=s.lower()
+    mois=re.search(r"(janvier|f(e|é)vrier|mars|avril|mai|juin|juillet|ao(u|û)t|septembre|octobre|novembre|d(e|é)cembre)", low_s).group()
+    n_mois=l_mois[mois]
+    year=re.search(r"[0-9]{4}", low_s).group()
+    return n_mois,year
+
+#a partir d'un dictionnaire de noms et d'une serie, renvoie cette serie sans les noms existants deja dans le dictionnaire
+def drop_existing_name(dico, df) :
+    res=df
+    for i in res.index:
+        if res[i] in dico :
+            res=res.drop(index=i)
+    return res
+
+
+
 
 
 #Main
-mois={
-    1 : "janvier", 2 : "fevrier", 3 : "mars", 4 : "avril", 5 : "mai", 6 : "juin",
-    7 : "juillet", 8 : "aout", 9 : "septembre", 10 : "octobre", 11 : "novembre", 12 : "decembre",
-}
-
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
-filepath="./donnees/Janvier-2023.csv"
+filepaths=os.listdir("./donnees/fiches_mensuelles/")
 
-filepaths=os.listdir("./donnees")
 for i in range(len(filepaths)) :
-    filepaths[i]="./donnees/"+filepaths[i]
+    filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i]
 
 for filepath in filepaths :
     df=pd.read_csv(filepath)
     df_activite=select_activite(df)
+    
+    #dictionnaires des vendeurs / types activites avant l'insertion
+    before_dico_type_activite_db=database_to_dict("type_activite",conn)
+    before_dico_vendeur_db=database_to_dict("vendeur",conn)
 
-    #recupere
-    dico_vendeur_db=database_to_dict("vendeur",conn)
-    dico_type_activite_db=database_to_dict("type_activite",conn)
 
-    # recupere la liste des activites et l'envoie en bdd
+    # recupere la liste des activites et envoie les nouvelles activites en bdd
     df_type_activite=df_activite['type_activite_nom'].drop_duplicates() #on supprime doublons -> Nan
     df_type_activite=df_type_activite.dropna() #on supprime Nan
+    df_type_activite=drop_existing_name(before_dico_type_activite_db, df_type_activite) #supprime les noms deja existants en bdd
     df_to_database(df_type_activite,"type_activite",conn)
 
-    # recupere la liste des vendeurs
+    # recupere la liste des vendeurs et envoie les nouveaux vendeurs en bdd
     df_vendeur=df_activite['vendeur_nom'].drop_duplicates() #on supprime doublons -> Nan
     df_vendeur=df_vendeur.dropna() #on supprime Nan
+    df_vendeur=drop_existing_name(before_dico_vendeur_db, df_vendeur) #supprime les noms deja existants en bdd
     df_to_database(df_vendeur,"vendeur",conn)
 
+
+
+    #dictionnaires des vendeurs / types activites apres l'insertion
+    after_dico_vendeur_db=database_to_dict("vendeur",conn)
+    after_dico_type_activite_db=database_to_dict("type_activite",conn)
+
+
     #transforme les noms de vendeur et type_activite en leur id associe
-    df_activite= df_activite.replace(dico_vendeur_db) #on transforme noms de vendeur en leur id
-    df_activite= df_activite.replace(dico_type_activite_db) #on transforme les noms de type_activite en leur id
+    df_activite= df_activite.replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
+    df_activite= df_activite.replace(after_dico_type_activite_db) #on transforme les noms de type_activite en leur id
 
-    df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id', 'activite_nom': 'activite_nom','type_activite_nom':'type_activite_id'}) #on change les nom de col pour correspondre à la table  de  la BDD
+    #on change les nom de col pour correspondre à la table de la BDD
+    df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id', 'activite_nom': 'activite_nom','type_activite_nom':'type_activite_id'}) 
 
-    #ajoute la colonne mois
-    df_activite["activite_mois"]="2023-01-01" #YYYY/MM/dd
+    #ajoute la colonne mois correspondante au mois trouve dans le nom de fichier
+    filename=os.path.basename(filepath)
+    mois, annee = str_to_month_year(filename)
+    df_activite["activite_mois"]=annee+"-"+mois+"-01" #YYYY/MM/dd
 
     #insert le tableau activite dans la bdd
     df_to_database(df_activite,"activite",conn)
+
+
+
+
+    
