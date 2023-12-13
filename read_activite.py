@@ -44,14 +44,10 @@ filepath="./donnees/Janvier-2023.csv"
 filepaths=os.listdir("./donnees")
 for i in range(len(filepaths)) :
     filepaths[i]="./donnees/"+filepaths[i]
-print(filepaths)
 
 for filepath in filepaths :
-
-# activite
     df=pd.read_csv(filepath)
     df_activite=select_activite(df)
-
 
     #recupere
     dico_vendeur_db=database_to_dict("vendeur",conn)
@@ -67,11 +63,14 @@ for filepath in filepaths :
     df_vendeur=df_vendeur.dropna() #on supprime Nan
     df_to_database(df_vendeur,"vendeur",conn)
 
-
+    #transforme les noms de vendeur et type_activite en leur id associe
     df_activite= df_activite.replace(dico_vendeur_db) #on transforme noms de vendeur en leur id
     df_activite= df_activite.replace(dico_type_activite_db) #on transforme les noms de type_activite en leur id
-    df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id', 'activite_nom': 'activite_nom','type_activite_nom':'type_activite_id'}) #on change les nom de col pour correspondre à la table  de  la BDD
-    df_activite["activite_mois"]="2023-01-01" #YYYY/MM/dd
-    print(df_activite)
 
+    df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id', 'activite_nom': 'activite_nom','type_activite_nom':'type_activite_id'}) #on change les nom de col pour correspondre à la table  de  la BDD
+
+    #ajoute la colonne mois
+    df_activite["activite_mois"]="2023-01-01" #YYYY/MM/dd
+
+    #insert le tableau activite dans la bdd
     df_to_database(df_activite,"activite",conn)
