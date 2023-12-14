@@ -21,8 +21,8 @@ def select_commmande(df) :
     df_commande = df_commande[df_commande['Quantité'].notna()]
     df_commande = df_commande[df_commande['Reduction'].notna()]
     df_commande = df_commande[df_commande["Date d'achat"].notna()]  ######/!\/!\ PROBLEME DATE D'ACHAT  NAN A REPARER PLUS TARD /!\ /!\ #####
-    df_commande = df_commande[['Structure','Transaction','Moyen de paiement','Nom',"Date d'achat" ]] #on selectionne les colonnes utiles pour nous par leur nom dans le DF
-    df_commande = df_commande.rename(columns={'Structure': 'type_structure_nom', 'Transaction': 'type_transaction_nom', 'Moyen de paiement':'moyen_paiement_nom', "Nom":'client_id',"Date d'achat":'commande_date_achat'})
+    df_commande = df_commande[['Structure', 'Transaction', 'Moyen de paiement', 'Nom', "Prénom", "Date d'achat"]] #on selectionne les colonnes utiles pour nous par leur nom dans le DF
+    df_commande = df_commande.rename(columns={'Structure': 'type_structure_nom', 'Transaction': 'type_transaction_nom', 'Moyen de paiement':'moyen_paiement_nom', "Nom":'client_nom', "Prénom":'client_prenom',"Date d'achat":'commande_date_achat'})
     #on change nom col pour correspondre au nom dans les tables type_structure, type_transaction, moyen_paiement et commande (pour commande_date_achat et client_id)
     return df_commande
 
@@ -56,9 +56,24 @@ def excel_to_sql_date(date):
     date=re.sub(r"(\d\d)-(\d\d)-(\d{4})",r"\3-\2-\1",date) #on inverse les jours et les mois
     return date
 
+def add_new_clients(df_to_add, df_from_db) :
+    df_res=df_to_add
+    df_res=df_res[["client_nom","client_prenom"]]
+    df_res["is_new"]=True
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if (df_res["client_nom"][i]==df_from_db["client_nom"][j]) & (df_res["client_prenom"][i]==df_from_db["client_prenom"][j]):
+                df_res.loc[i,"is_new"]=False
+                break
+    df_res=df_res[df_res["is_new"]]
+    df_res["client_mail"]=np.nan
+    df_res["client_telephone"]=np.nan
+    df_res=df_res.drop("is_new",axis=1)
+    return(df_res)
+
 
 #Main
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
 filepaths=os.listdir("./donnees/fiches_mensuelles/") #récupère liste des noms des fichiers dans le dossier "fiches_mensuelles"
 
@@ -68,6 +83,7 @@ for i in range(len(filepaths)) :
 for filepath in filepaths :
     df=pd.read_csv(filepath)
     df_commande=select_commmande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
+    
     
     #dictionnaires des structures / transactions / moyens de paiement avant l'insertion
     before_dico_type_structure_db=database_to_dict("type_structure",conn)
@@ -113,7 +129,12 @@ for filepath in filepaths :
     df_commande['commande_date_achat']=df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x)) #on change "/" en "-" et on inverse jours et ans
 
 
-    df_commande["client_id"]=1 #il faut un champs non nul, on en place un arbitraire
+    df_contacts_db = pd.read_sql_query('SELECT client_id,client_nom,client_prenom FROM client', conn) # recupere la liste des clients dans la bdd
+    clients_to_add=add_new_clients(df_commande,df_contacts_db) # compare la liste des clients des commandes avec celle de la bdd et renvoie ceux qui ne correspondent pas
+    df_to_database(clients_to_add,"client",conn) #ajoute les nouveaux clients a la base de donnee
+    df_commande=df_commande.drop(["client_nom","client_prenom"],axis=1)
 
+    df_commande["client_id"]=1
+    print(df_commande)
     # insert le tableau activite dans la bdd
     df_to_database(df_commande,"commande",conn)

@@ -52,8 +52,6 @@ def drop_existing_name(dico, df) :
 
 
 
-
-
 #Main
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
@@ -104,7 +102,3 @@ for filepath in filepaths :
 
     #insert le tableau activite dans la bdd
     df_to_database(df_activite,"activite",conn)
-
-
-
-
