@@ -7,8 +7,8 @@ CREATE TABLE client(
    client_id INT AUTO_INCREMENT,
    client_nom VARCHAR(155),
    client_prenom VARCHAR(155),
-   mail VARCHAR(155),
-   telephone VARCHAR(155),
+   client_mail VARCHAR(155),
+   client_telephone VARCHAR(155),
    PRIMARY KEY(client_id)
 );
 
@@ -37,9 +37,9 @@ CREATE TABLE activite(
 );
 
 CREATE TABLE type_structure(
-   structure_id INT AUTO_INCREMENT,
-   structure_nom VARCHAR(155) NOT NULL,
-   PRIMARY KEY(structure_id)
+   type_structure_id INT AUTO_INCREMENT,
+   type_structure_nom VARCHAR(155) NOT NULL,
+   PRIMARY KEY(type_structure_id)
 );
 
 CREATE TABLE type_transaction(
@@ -57,27 +57,27 @@ CREATE TABLE moyen_paiement(
 CREATE TABLE commande(
    commmande_id INT AUTO_INCREMENT,
    commande_date_achat DATE NOT NULL,
-   commande_date_encaissement DATE,
-   commande_date_perception DATE,
-   commande_date_remboursement DATE,
    client_id INT NOT NULL,
    moyen_paiement_id INT NOT NULL,
    type_transaction_id INT NOT NULL,
-   structure_id INT NOT NULL,
+   type_structure_id INT NOT NULL,
    PRIMARY KEY(commmande_id),
    FOREIGN KEY(client_id) REFERENCES client(client_id),
    FOREIGN KEY(moyen_paiement_id) REFERENCES moyen_paiement(moyen_paiement_id),
    FOREIGN KEY(type_transaction_id) REFERENCES type_transaction(type_transaction_id),
-   FOREIGN KEY(structure_id) REFERENCES type_structure(structure_id)
+   FOREIGN KEY(type_structure_id) REFERENCES type_structure(type_structure_id)
 );
 
 CREATE TABLE commande_activite(
-   activite_id INT AUTO_INCREMENT,
+   activite_id INT,
    commmande_id INT,
    commande_date_soin DATE,
    commande_quantité DECIMAL(15,2) NOT NULL,
    commande_deplacement DECIMAL(15,2) NOT NULL,
    commande_reduction DECIMAL(15,2) NOT NULL,
+   commande_date_encaissement DATE,
+   commande_date_perception DATE,
+   commande_date_remboursement DATE,
    PRIMARY KEY(activite_id, commmande_id),
    FOREIGN KEY(activite_id) REFERENCES activite(activite_id),
    FOREIGN KEY(commmande_id) REFERENCES commande(commmande_id)
