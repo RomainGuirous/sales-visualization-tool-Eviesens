@@ -52,25 +52,58 @@ def drop_existing_name(dico, df) :
 
 #transforme les dates format excel au format SQL
 def excel_to_sql_date(date):
+    if pd.isnull(date) :
+        return np.nan
     date=re.sub(r"/","-",date) #on transforme les "/" en "-"
     date=re.sub(r"(\d\d)-(\d\d)-(\d{4})",r"\3-\2-\1",date) #on inverse les jours et les mois
     return date
 
-def add_new_clients(df_to_add, df_from_db) :
+# compare deux chaines de charactere, si ils sont egaux ou tous les deux nuls renvoie True, sinon renvoie False
+def equal_or_both_null(s1, s2) :
+    s1_2=str(s1)
+    s2_2=str(s2)
+    if pd.isnull(s1_2) & pd.isnull(s2_2) :
+        return True
+    if pd.isnull(s1_2) | pd.isnull(s2_2) :
+        return False
+    if s1_2.lower()==s2_2.lower() :
+        return True
+    return False
+
+def add_new_clients(df_to_add, connection) :
     df_res=df_to_add
+    df_from_db = pd.read_sql_query('SELECT client_id,client_nom,client_prenom FROM client', connection)
     df_res=df_res[["client_nom","client_prenom"]]
-    df_res["is_new"]=True
+    df_res = df_res.astype({"client_nom" : str, "client_prenom" : str})
+    add_client=True #un client est par defaut inconnu et doit etre ajoute a la bdd
     for i in df_res.index :
         for j in df_from_db.index :
-            if (df_res["client_nom"][i]==df_from_db["client_nom"][j]) & (df_res["client_prenom"][i]==df_from_db["client_prenom"][j]):
-                df_res.loc[i,"is_new"]=False
-                break
-    df_res=df_res[df_res["is_new"]]
-    df_res["client_mail"]=np.nan
-    df_res["client_telephone"]=np.nan
-    df_res=df_res.drop("is_new",axis=1)
-    return(df_res)
+            # si le nom et prenom en fiche = le nom et prenom en bdd :
+            if equal_or_both_null(df_res.loc[i,"client_nom"], df_from_db.loc[j,"client_nom"]) & equal_or_both_null(df_res.loc[i,"client_prenom"], df_from_db.loc[j,"client_prenom"]):
+                add_client=False # si le client est deja connu, on ne l'ajoute pas
+        if add_client :
+            client_to_add=df_res.loc[[i]] #on recupere la ligne de la fiche a rajouter
+            client_to_add["client_mail"]=np.nan # on ajoute les colonnes client_mail et client_telephone pour correspondre au schema de la bdd
+            client_to_add["client_telephone"]=np.nan
+            client_to_add.to_sql("client", con=connection, index=False, if_exists='append') # on ajoute le client a la bdd
+            df_from_db = pd.concat([df_from_db, client_to_add], ignore_index=True) # ajoute le nouveau client au df local
+        add_client=True # on reinitialise la variable pour le prochain client
 
+def get_clients_id(df_to_get, df_from_db) :
+    pd.options.mode.chained_assignment = None
+    df_res=df_to_get
+    df_res["client_id"]=np.nan # initialise tous les id a null
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if equal_or_both_null(df_res.loc[i,"client_nom"], df_from_db.loc[j,"client_nom"]) & equal_or_both_null(df_res.loc[i,"client_prenom"], df_from_db.loc[j,"client_prenom"]):
+                df_res.loc[i, "client_id"]=df_from_db.loc[j, "client_id"] # quand un couple nom/prenom est trouve dans la bdd, son id lui est associe
+    pd.options.mode.chained_assignment = "warn"
+    return df_res
+
+def drop_if_command_exists(df_to_drop, df_from_db) :
+    df_res = pd.concat([df_from_db, df_to_drop], ignore_index=True)
+    df_res = df_res.drop_duplicates(subset=["commande_date_achat", "client_id", "moyen_paiement_id", "type_transaction_id", "type_structure_id"])
+    return df_res
 
 #Main
 conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
@@ -82,59 +115,57 @@ for i in range(len(filepaths)) :
 
 for filepath in filepaths :
     df=pd.read_csv(filepath)
+    print(filepath)
     df_commande=select_commmande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
     
     
-    #dictionnaires des structures / transactions / moyens de paiement avant l'insertion
-    before_dico_type_structure_db=database_to_dict("type_structure",conn)
+    # table type_structure
+    before_dico_type_structure_db=database_to_dict("type_structure",conn) # recupere la liste des structures du fichier en cours et envoie les nouvelles structures en bdd
+    df_type_structure=df_commande['type_structure_nom'].drop_duplicates() # suppression des doublons
+    df_type_structure=df_type_structure.dropna() #suppression des Nan
+    df_type_structure=drop_existing_name(before_dico_type_structure_db, df_type_structure) # suppression des noms deja existants en bdd
+    df_to_database(df_type_structure,"type_structure",conn) # insertion des nouveaux noms de structure en bdd
+    after_dico_type_structure_db=database_to_dict("type_structure",conn) # dictionnaires des structures apres l'insertion
+    df_commande= df_commande.replace(after_dico_type_structure_db) # remplacement des noms de structure par leur id
+
+
+    # meme chose avec la table type_transaction
     before_dico_type_transaction_db=database_to_dict("type_transaction",conn)
-    before_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
-
-
-    # recupere la liste des structures et envoie les nouvelles structures en bdd
-    df_type_structure=df_commande['type_structure_nom'].drop_duplicates() #on supprime doublons -> Nan
-    df_type_structure=df_type_structure.dropna() #on supprime Nan
-    df_type_structure=drop_existing_name(before_dico_type_structure_db, df_type_structure) #supprime les noms deja existants en bdd
-    df_to_database(df_type_structure,"type_structure",conn)
-
-    # recupere la liste des transactions et envoie les nouvelles transactions en bdd
-    df_type_transaction=df_commande['type_transaction_nom'].drop_duplicates() #on supprime doublons -> Nan
-    df_type_transaction=df_type_transaction.dropna() #on supprime Nan
-    df_type_transaction=drop_existing_name(before_dico_type_transaction_db, df_type_transaction) #supprime les noms deja existants en bdd
+    df_type_transaction=df_commande['type_transaction_nom'].drop_duplicates() 
+    df_type_transaction=df_type_transaction.dropna()
+    df_type_transaction=drop_existing_name(before_dico_type_transaction_db, df_type_transaction)
     df_to_database(df_type_transaction,"type_transaction",conn)
-
-    # recupere la liste des moyens de paiement et envoie les nouveaux moyens de paiement en bdd
-    df_moyen_paiement=df_commande['moyen_paiement_nom'].drop_duplicates() #on supprime doublons -> Nan
-    df_moyen_paiement=df_moyen_paiement.dropna() #on supprime Nan
-    df_moyen_paiement=drop_existing_name(before_dico_moyen_paiement_db, df_moyen_paiement) #supprime les noms deja existants en bdd
-    df_to_database(df_moyen_paiement,"moyen_paiement",conn)
-
-
-
-    #dictionnaires des structures / transactions / moyens de paiement apres l'insertion
-    after_dico_type_structure_db=database_to_dict("type_structure",conn)
     after_dico_type_transaction_db=database_to_dict("type_transaction",conn)
+    df_commande= df_commande.replace(after_dico_type_transaction_db)
+
+
+    # meme chose avec la table moyen_paiement
+    before_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
+    df_moyen_paiement=df_commande['moyen_paiement_nom'].drop_duplicates()
+    df_moyen_paiement=df_moyen_paiement.dropna()
+    df_moyen_paiement=drop_existing_name(before_dico_moyen_paiement_db, df_moyen_paiement)
+    df_to_database(df_moyen_paiement,"moyen_paiement",conn)
     after_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
+    df_commande= df_commande.replace(after_dico_moyen_paiement_db)
 
 
-    #transforme les noms de structures / transactions / moyens de paiement en leur id associe
-    df_commande= df_commande.replace(after_dico_type_structure_db) #on transforme noms de structures en leur id
-    df_commande= df_commande.replace(after_dico_type_transaction_db) #on transforme les noms de transactions en leur id
-    df_commande= df_commande.replace(after_dico_moyen_paiement_db) #on transforme les noms de moyen de paiement en leur id
+    # table clients
+    add_new_clients(df_commande, conn) # ajoute les client du fichier qui n'existent pas dans la bdd
+    df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', conn) # recupere la liste des clients de la bdd
+    df_commande=get_clients_id(df_commande, df_from_db) # compare chaque client du fichier avec ceux de la bdd et leur associe leur id en rajoutant client_id au dataframe
+    df_commande=df_commande.drop(["client_nom","client_prenom"],axis=1) # retire les colonnes client_nom et client_prenom qui n'apparaissent pas en bdd
 
-    #on change les nom de col pour correspondre à la table de la BDD
+
+    # change les nom de col pour correspondre à la table de la BDD
     df_commande = df_commande.rename(columns={'type_structure_nom': 'type_structure_id', 'type_transaction_nom': 'type_transaction_id','moyen_paiement_nom':'moyen_paiement_id'})
 
-    #on normalise les dates
+    # change le format de dates pour correspondre aux normes sql : de JJ/MM/AAAA -> AAAA-MM-JJ
     df_commande['commande_date_achat']=df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x)) #on change "/" en "-" et on inverse jours et ans
 
+    #TODO drop les doublons de commande
+    # df_from_db = pd.read_sql_query('SELECT commande_id, commande_date_achat, client_id, moyen_paiement_id, type_transaction_id, type_structure_id FROM commande', conn)
+    # print(drop_if_command_exists(df_commande, df_from_db))
 
-    df_contacts_db = pd.read_sql_query('SELECT client_id,client_nom,client_prenom FROM client', conn) # recupere la liste des clients dans la bdd
-    clients_to_add=add_new_clients(df_commande,df_contacts_db) # compare la liste des clients des commandes avec celle de la bdd et renvoie ceux qui ne correspondent pas
-    df_to_database(clients_to_add,"client",conn) #ajoute les nouveaux clients a la base de donnee
-    df_commande=df_commande.drop(["client_nom","client_prenom"],axis=1)
 
-    df_commande["client_id"]=1
-    print(df_commande)
-    # insert le tableau activite dans la bdd
-    df_to_database(df_commande,"commande",conn)
+    # insert les commandes dans la bdd
+    df_to_database(df_commande, "commande", conn)

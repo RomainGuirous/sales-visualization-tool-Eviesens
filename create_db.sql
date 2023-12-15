@@ -55,13 +55,13 @@ CREATE TABLE moyen_paiement(
 );
 
 CREATE TABLE commande(
-   commmande_id INT AUTO_INCREMENT,
+   commande_id INT AUTO_INCREMENT,
    commande_date_achat DATE NOT NULL,
    client_id INT NOT NULL,
    moyen_paiement_id INT NOT NULL,
    type_transaction_id INT NOT NULL,
    type_structure_id INT NOT NULL,
-   PRIMARY KEY(commmande_id),
+   PRIMARY KEY(commande_id),
    FOREIGN KEY(client_id) REFERENCES client(client_id),
    FOREIGN KEY(moyen_paiement_id) REFERENCES moyen_paiement(moyen_paiement_id),
    FOREIGN KEY(type_transaction_id) REFERENCES type_transaction(type_transaction_id),
@@ -70,7 +70,7 @@ CREATE TABLE commande(
 
 CREATE TABLE commande_activite(
    activite_id INT,
-   commmande_id INT,
+   commande_id INT,
    commande_date_soin DATE,
    commande_quantité DECIMAL(15,2) NOT NULL,
    commande_deplacement DECIMAL(15,2) NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE commande_activite(
    commande_date_encaissement DATE,
    commande_date_perception DATE,
    commande_date_remboursement DATE,
-   PRIMARY KEY(activite_id, commmande_id),
+   PRIMARY KEY(activite_id, commande_id),
    FOREIGN KEY(activite_id) REFERENCES activite(activite_id),
-   FOREIGN KEY(commmande_id) REFERENCES commande(commmande_id)
+   FOREIGN KEY(commande_id) REFERENCES commande(commande_id)
 );
