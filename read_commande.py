@@ -6,7 +6,7 @@ import re
 pd.set_option('display.max_rows', 500)
 
 # commande
-def select_commmande(df) :
+def select_commande(df) :
     df_commande = df.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
     df_commande = df_commande[df_commande['Structure'].notna()]
     df_commande = df_commande[df_commande['Type'].notna()]
@@ -141,8 +141,7 @@ for i in range(len(filepaths)) :
 for filepath in filepaths :
     print(filepath)
     df=pd.read_csv(filepath)
-    df_activite= pd.read_sql_query('SELECT * FROM activite', conn)
-    df_commande=select_commmande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
+    df_commande=select_commande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
     
     
     # table type_structure
