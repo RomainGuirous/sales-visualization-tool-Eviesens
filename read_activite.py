@@ -64,22 +64,64 @@ def equal_or_both_null(s1, s2) :
 
 def add_type_act(df_to_add, connection) :
     df_res=df_to_add
-    df_from_db = pd.read_sql_query('SELECT type_activite_nom,activite_nom FROM type_activite', connection)
+    df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection)
     df_res=df_res[["type_activite_nom","activite_nom"]]
-    df_res = df_res.astype({"type_activite_nom" : str, "activite_nom" : str})
     add_type_act=True #un client est par defaut inconnu et doit etre ajoute a la bdd
     for i in df_res.index :
         for j in df_from_db.index :
-            # si le nom et prenom en fiche = le nom et prenom en bdd :
+            # si le nom et type_nom_activite en fiche = les memes bdd :
             if equal_or_both_null(df_res.loc[i,"type_activite_nom"], df_from_db.loc[j,"type_activite_nom"]) & equal_or_both_null(df_res.loc[i,"activite_nom"], df_from_db.loc[j,"activite_nom"]):
-                add_type_act=False # si le client est deja connu, on ne l'ajoute pas
+                add_type_act=False # si le le type_act est deja connu, on ne l'ajoute pas
         if add_type_act :
             type_act_to_add=df_res.loc[[i]] #on recupere la ligne de la fiche a rajouter
-            type_act_to_add.to_sql("type_activite", con=connection, index=False, if_exists='append') # on ajoute le client a la bdd
-            df_from_db = pd.concat([df_from_db, type_act_to_add], ignore_index=True) # ajoute le nouveau client au df local
-        add_type_act=True # on reinitialise la variable pour le prochain client
+            type_act_to_add.to_sql("type_activite", con=connection, index=False, if_exists='append') # on ajoute le type_act a la bdd
+            df_from_db = pd.concat([df_from_db, type_act_to_add], ignore_index=True) # ajoute le nouveau type_act au df local
+        add_type_act=True # on reinitialise la variable pour le prochain type_act
 
+def get_type_act_id(df_to_get, connection) :
+    pd.options.mode.chained_assignment = None
+    df_res=df_to_get
+    df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection) # recupere la liste des clients de la bdd
+    df_res["type_activite_id"]=np.nan # initialise tous les id a null
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if equal_or_both_null(df_res.loc[i,"type_activite_nom"], df_from_db.loc[j,"type_activite_nom"]) & equal_or_both_null(df_res.loc[i,"activite_nom"], df_from_db.loc[j,"activite_nom"]):
+                df_res.loc[i, "type_activite_id"]=df_from_db.loc[j, "type_activite_id"] # quand un couple nom/prenom est trouve dans la bdd, son id lui est associe
+    pd.options.mode.chained_assignment = "warn"
+    return df_res
 
+def add_new_activite(df_to_add, connection) :
+    df_res = df_to_add # liste des activites a rajouter en cours
+    df_from_db = pd.read_sql_query('SELECT activite_mois, type_activite_id, vendeur_id FROM activite', connection)
+    add_activite=True # une activite est ajoutee par defaut
+
+    # compare chacun des champs des deux dataframe entre eux (activite_mois, type_activite_id, vendeur_id) et renvoie True
+    # si les 5 champs correspondent entre eux
+    def same_line(i, j, dfcom, dfdb) :
+        type_a_id = float(dfcom.loc[i,"type_activite_id"])
+        type_a_id_db = float(dfdb.loc[j,"type_activite_id"])
+        vendeur_id = float(dfcom.loc[i,"vendeur_id"])
+        vendeur_id_db = float(dfdb.loc[j,"vendeur_id"])
+        mois_annee = str(dfcom.loc[i,"activite_mois"])
+        mois=mois_annee[5:7]
+        annee=mois_annee[0:4]
+        mois_annee_db = str(dfdb.loc[j, "activite_mois"])
+        mois_db=mois_annee_db[5:7]
+        annee_db=mois_annee_db[0:4]
+        if (type_a_id==type_a_id_db) & (vendeur_id==vendeur_id_db) & (mois==mois_db) & (annee==annee_db):
+            return True
+        return False
+    add_activite=True
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if same_line(i, j, df_res, df_from_db) :
+                add_activite=False
+        if add_activite :
+            activite_to_add=df_res.loc[[i]] #on recupere la ligne de l'activite a rajouter
+            activite_to_add.to_sql("activite", con=connection, index=False, if_exists='append') # on ajoute l'activite a la bdd
+            df_from_db = pd.concat([df_from_db, activite_to_add], ignore_index=True) # ajoute la nouvelle activite au df local
+        add_activite=True # on reinitialise la variable pour la prochaine activite
+    return df_res
 
 #Main
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
@@ -90,6 +132,7 @@ for i in range(len(filepaths)) :
     filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i]
 
 for filepath in filepaths :
+    print(filepath)
     df=pd.read_csv(filepath)
     df_activite=select_activite(df)
     
@@ -103,20 +146,20 @@ for filepath in filepaths :
     df_activite= df_activite.replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
     
     #table type_activite
-    add_type_act(df_activite,conn)
-    after_dico_type_act_db=database_to_dict("type_activite",conn) #dictionnaires des vendeurs / types activites apres l'insertion
-    df_activite= df_activite.replace(after_dico_type_act_db)
+    add_type_act(df_activite, conn)
+    df_activite=get_type_act_id(df_activite, conn)
+    df_activite=df_activite.drop(["type_activite_nom", "activite_nom"], axis=1)
 
 
 
     #on change les nom de col pour correspondre à la table de la BDD
     df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id','type_activite_nom':'type_activite_id'})
-    df_activite = df_activite.drop('activite_nom',axis=1)
 
     #ajoute la colonne mois correspondante au mois trouve dans le nom de fichier
     filename=os.path.basename(filepath)
     mois, annee = str_to_month_year(filename)
     df_activite["activite_mois"]=annee+"-"+mois+"-01" #YYYY/MM/dd
 
-    # insert le tableau activite dans la bdd
-    df_to_database(df_activite,"activite",conn)
+    # # insert le tableau activite dans la bdd
+    add_new_activite(df_activite, conn)
+    # df_to_database(df_activite,"activite",conn)

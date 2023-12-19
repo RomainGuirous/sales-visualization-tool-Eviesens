@@ -3,25 +3,10 @@ import numpy as np
 import os
 from sqlalchemy import create_engine
 import re
-pd.set_option('display.max_rows', 401)
+pd.set_option('display.max_rows', 500)
 
-
-filepath="./donnees/fiches_mensuelles/Janvier-2023.csv"
-
-#mettre:
-    #activite_id
-    #commande_id
-    #commmande_date_soin
-    #commande_quantite
-    #commande_deplacement
-    #commande_reduction
-    #commande_date_encaissement
-    #commande_perception
-    #commande_date_remboursement
-df=pd.read_csv(filepath)
-df=df.iloc[:49,:21]
-print(df)
-def select_commmande_activite(df) :
+# commande
+def select_commande(df) :
     df_commande = df.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
     df_commande = df_commande[df_commande['Structure'].notna()]
     df_commande = df_commande[df_commande['Type'].notna()]
@@ -32,21 +17,31 @@ def select_commmande_activite(df) :
     df_commande = df_commande[df_commande['Déplacement'].notna()]
     df_commande = df_commande[df_commande['Quantité'].notna()]
     df_commande = df_commande[df_commande['Reduction'].notna()]
-    df_commande = df_commande[df_commande["Date d'achat"].notna()]  ######/!\/!\ PROBLEME DATE D'ACHAT  NAN A REPARER PLUS TARD /!\ /!\ #####
+    df_commande = df_commande[df_commande["Date d'achat"].notna()]  ######/!\/!\ OCTOBRE PROBLEME DATE D'ACHAT  NAN A REPARER PLUS TARD /!\ /!\ #####
 
-    df_commande = df_commande[['Intitulé',"Date d'achat",'Date soin', 'Quantité', 'Déplacement', 'Reduction', 'Date perception', 'Date remboursement', 'Date Encaissement ']] #on selectionne les colonnes utiles pour nous par leur nom dans le DF
-
-    df_commande = df_commande.rename(columns={'Intitulé':'activite_nom',"Date d'achat":'commande_date_achat','Date soin': 'commande_date_soin', 'Quantité': 'commande_quantite', 'Déplacement':'commande_deplacement',
-                                              "Reduction":'commande_reduction',"Date perception":'commande_perception',"Date remboursement":'commande_date_remboursement', 'Date Encaissement ':'commande_date_encaissement'})
+    #on selectionne les colonnes utiles pour nous par leur nom dans le DF    df_commande = df_commande.rename(columns={'Structure': 'type_structure_nom', 'Transaction': 'type_transaction_nom', 'Moyen de paiement':'moyen_paiement_nom', "Nom":'client_nom', "Prénom":'client_prenom',"Date d'achat":'commande_date_achat'})
+    df_commande = df_commande[['Date soin', 'Nom' ,'Prénom', 'Type', 'Vendeur', 'Intitulé','Déplacement', 'Quantité',
+                               'Reduction', "Date d'achat", 'Date Encaissement ', 'Date perception', 'Date remboursement']]
     
+    #on change nom col pour correspondre au nom dans les tables type_structure, type_transaction, moyen_paiement et commande (pour commande_date_achat et client_id)
+    df_commande = df_commande.rename(columns={'Date soin': 'commande_date_soin', 'Nom': 'client_nom',
+                                              'Prénom': 'client_prenom', 'Type': 'type_activite_nom', 'Vendeur': 'vendeur_nom',
+                                              'Intitulé': 'activite_nom', 'Déplacement': 'commande_deplacement',
+                                              'Quantité': 'commande_quantité', 'Reduction': 'commande_reduction',
+                                              "Date d'achat": 'commande_date_achat', 'Date Encaissement ': 'commande_date_encaissement',
+                                              'Date perception': 'commande_date_perception', 'Date remboursement': 'commande_date_remboursement'})
     return df_commande
 
-
-# df_commande_activite=select_commmande_activite(df)
-# print(df_commande_activite)
-# envoie un dataframe dans la base de donnee
-def df_to_database(df, table_name, connection) :
-    df.to_sql(table_name, con=connection, index=False, if_exists='append')
+def equal_or_both_null(s1, s2) :
+    s1_2=str(s1)
+    s2_2=str(s2)
+    if pd.isnull(s1_2) & pd.isnull(s2_2) :
+        return True
+    if pd.isnull(s1_2) | pd.isnull(s2_2) :
+        return False
+    if s1_2.lower() == s2_2.lower() :
+        return True
+    return False
 
 #transforme les dates format excel au format SQL et si Nan retourne Nan
 def excel_to_sql_date(date):
@@ -57,56 +52,109 @@ def excel_to_sql_date(date):
         date=re.sub(r"(\d\d)-(\d\d)-(\d{4})",r"\3-\2-\1",date) #on inverse les jours et les mois
         return date
 
-#on transforme date avec un jour fixe (le 01)
-def date_jour_fixe(date):
-    date=re.sub(r"(\d{4}-\d\d)-\d\d",r"\1-01",date)
-    return date
-
-# compare deux chaines de charactere, si ils sont egaux ou tous les deux nuls renvoie True, sinon renvoie False
-def equal_or_both_null(s1, s2) :
-    s1_2=str(s1)
-    s2_2=str(s2)
-    if pd.isnull(s1_2) & pd.isnull(s2_2) :
-        return True
-    if pd.isnull(s1_2) | pd.isnull(s2_2) :
-        return False
-    if s1_2.lower()==s2_2.lower() :
-        return True
-    return False
-
-# si dans une ligne de la table activite le couple (activite_nom, activite_mois) est egal au couple (activite_nom,commande_date_achat) d'une ligne la table commande_activite
-# il rajoute à la ligne de commande_activite son activite_id
-def add_id_df(df_acti, df_com_acti) :
-    x=df_com_acti
-    x['activite_id']=np.nan #pour créer colonne, on la remplit de vides
-    x['commande_date_achat_test']=x['commande_date_achat'].transform(lambda x: date_jour_fixe(x)) #on crée une nouvelle colonne avec le jour fixe (01) qui va permettre de comparer (comme ça la vraie date reste intact)
-    for i in df_acti.index :
-        for j in x.index :
-            if equal_or_both_null(df_acti["activite_nom"][i],x["activite_nom"][j]) & equal_or_both_null(df_acti["activite_mois"][i],x["commande_date_achat_test"][j]): #on s'assure de ne pas avoir de vide et de tout mettre en minuscule
-                x.loc[j,['activite_id']]=df_acti.loc[i,['activite_id']]   
-    x=x.drop(['commande_date_achat_test'],axis=1) #on supprime la colonne de commparaison qui ne sert plus
-    return x
-
-def add_id_df2(df_com, df_com_acti) :
-    x=df_com_acti
-    x['commande_id']=np.nan #pour créer colonne, on la remplit de vides
-    # x['commande_date_achat_test']=x['commande_date_achat'].transform(lambda x: date_jour_fixe(x)) #on crée une nouvelle colonne avec le jour fixe (01) qui va permettre de comparer (comme ça la vraie date reste intact)
-    for i in df_com.index :
-        for j in x.index :
-            if equal_or_both_null(df_com["activite_nom"][i],x["activite_nom"][j]) & equal_or_both_null(df_com["commande_date_achat"][i],x["commande_date_achat"][j]): #on s'assure de ne pas avoir de vide et de tout mettre en minuscule
-                x.loc[j,['activite_id']]=df_com.loc[i,['activite_id']]   
-    x=x.drop(['commande_date_achat_test'],axis=1) #on supprime la colonne de commparaison qui ne sert plus
-    return x
-
-def get_clients_id(df_to_get, df_from_db) :
+# remplace les colonnes client_nom et client_prenom par client_id
+def get_client_id(df_commande, connection) :
     pd.options.mode.chained_assignment = None
-    df_res=df_to_get
-    df_res["client_id"]=np.nan # initialise tous les id a null
+    df_res=df_commande
+    df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', connection)
+    df_res["client_id"]=np.nan
+    def same_line(i, j, dfcom, dfdb) :
+        nom = str(dfcom.loc[i,"client_nom"]).lower()
+        nom_db = str(dfdb.loc[j,"client_nom"]).lower()
+        prenom = str(dfcom.loc[i,"client_prenom"]).lower()
+        prenom_db = str(dfdb.loc[j,"client_prenom"]).lower()
+        if ( (equal_or_both_null(nom,nom_db)) & (equal_or_both_null(prenom,prenom_db)) ) :
+            return True
+        return False
     for i in df_res.index :
         for j in df_from_db.index :
-            if equal_or_both_null(df_res.loc[i,"client_nom"], df_from_db.loc[j,"client_nom"]) & equal_or_both_null(df_res.loc[i,"client_prenom"], df_from_db.loc[j,"client_prenom"]):
+            if same_line(i, j, df_res, df_from_db) :
                 df_res.loc[i, "client_id"]=df_from_db.loc[j, "client_id"] # quand un couple nom/prenom est trouve dans la bdd, son id lui est associe
     pd.options.mode.chained_assignment = "warn"
+    df_res=df_res.drop(["client_nom", "client_prenom"], axis=1)
+    return df_res
+
+# ajoute l'id de la commande a partir de l'id client et de la date d'achat de la commande
+def get_commande_id(df_commande, connection) :
+    df_res=df_commande
+    df_from_db = pd.read_sql_query('SELECT commande_id, commande_date_achat, client_id, moyen_paiement_id, type_transaction_id, type_structure_id FROM commande', connection)
+    df_res["commande_id"]=np.nan
+    def same_line(i, j, dfcom, dfdb) :
+        c = str(dfcom.loc[i,"commande_date_achat"])
+        c_db = str(dfdb.loc[j,"commande_date_achat"])
+        cli = float(dfcom.loc[i,"client_id"])
+        cli_db = float(dfdb.loc[j,"client_id"])
+        if ( (c==c_db) & (cli==cli_db) ) :
+            return True
+        return False
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if same_line(i, j, df_res, df_from_db) :
+                df_res.loc[i, "commande_id"] = df_from_db.loc[j, "commande_id"]
+    df_res=df_res.drop(["client_id"], axis=1)
+    return df_res
+
+# remplace le nom du vendeur par son id associe
+def get_vendeur_id(df_commande, connection) :
+    df_res=df_commande
+    df_from_db = pd.read_sql_query('SELECT vendeur_id, vendeur_nom FROM vendeur', connection)
+    df_res["vendeur_id"]=np.nan
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if(equal_or_both_null(df_res.loc[i, "vendeur_nom"].lower(), df_from_db.loc[j, "vendeur_nom"].lower())) :
+                df_res.loc[i, "vendeur_id"]=df_from_db.loc[j, "vendeur_id"] # quand un couple nom/prenom est trouve dans la bdd, son id lui est associe
+    pd.options.mode.chained_assignment = "warn"
+    df_res=df_res.drop(["vendeur_nom"], axis=1)
+    return df_res
+
+# remplace les colonnes type_activite_nom et activite_nom par l'id associe
+def get_type_activite_id(df_commande, connection) :
+    pd.options.mode.chained_assignment = None
+    df_res=df_commande
+    df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection)
+    df_res["type_activite_id"]=np.nan
+    def same_line(i, j, dfcom, dfdb) :
+        type_a_nom = str(dfcom.loc[i,"type_activite_nom"]).lower()
+        type_a_nom_db = str(dfdb.loc[j,"type_activite_nom"]).lower()
+        a_nom = str(dfcom.loc[i,"activite_nom"]).lower()
+        a_nom_db = str(dfdb.loc[j,"activite_nom"]).lower()
+        if (type_a_nom==type_a_nom_db) & (a_nom==a_nom_db) :
+            return True
+        return False
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if same_line(i, j, df_res, df_from_db) :
+                df_res.loc[i, "type_activite_id"] = df_from_db.loc[j, "type_activite_id"]
+    pd.options.mode.chained_assignment = "warn"
+    df_res=df_res.drop(["type_activite_nom", "activite_nom"], axis=1)
+    return df_res
+
+# recupere l'id de l'activite a partir de l'id du type d'activite, de l'id du vendeur et de la date d'achat (mois et annee) 
+def get_activite(df_commande, connection) :
+    pd.options.mode.chained_assignment = None
+    df_res=df_commande
+    df_from_db = pd.read_sql_query('SELECT activite_id, activite_mois, type_activite_id, vendeur_id FROM activite', connection)
+    df_res["activite_id"]=np.nan
+    def same_line(i, j, dfcom, dfdb) :
+        type_a_id = float(dfcom.loc[i,"type_activite_id"])
+        type_a_id_db = float(dfdb.loc[j,"type_activite_id"])
+        vendeur_id = float(dfcom.loc[i,"vendeur_id"])
+        vendeur_id_db = float(dfdb.loc[j,"vendeur_id"])
+        mois_annee = str(dfcom.loc[i,"commande_date_achat"])
+        mois=mois_annee[5:7]
+        annee=mois_annee[0:4]
+        mois_annee_db = str(dfdb.loc[j, "activite_mois"])
+        mois_db=mois_annee_db[5:7]
+        annee_db=mois_annee_db[0:4]
+        if (type_a_id==type_a_id_db) & (vendeur_id==vendeur_id_db) & (mois==mois_db) & (annee==annee_db):
+            return True
+        return False
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if same_line(i, j, df_res, df_from_db) :
+                df_res.loc[i, "activite_id"] = df_from_db.loc[j, "activite_id"]
+    pd.options.mode.chained_assignment = "warn"
+    df_res=df_res.drop(["type_activite_id", "vendeur_id", "commande_date_achat"], axis=1)
     return df_res
 
 #Main
@@ -120,22 +168,21 @@ for i in range(len(filepaths)) :
 for filepath in filepaths :
     print(filepath)
     df=pd.read_csv(filepath)
-    df_commande_activite=select_commmande_activite(df)
+    df_commande=select_commande(df)
+    df_commande['commande_date_soin'] = df_commande['commande_date_soin'].transform(lambda x: excel_to_sql_date(x))
+    df_commande['commande_date_achat'] = df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x))
+    df_commande['commande_date_encaissement'] = df_commande['commande_date_encaissement'].transform(lambda x: excel_to_sql_date(x))
+    df_commande['commande_date_perception'] = df_commande['commande_date_perception'].transform(lambda x: excel_to_sql_date(x))
+    df_commande['commande_date_remboursement'] = df_commande['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
 
-    #on met les dates au format yyyy-mm-dd
-    df_commande_activite['commande_date_achat'] =df_commande_activite['commande_date_achat'].transform(lambda x: excel_to_sql_date(x))
-    df_commande_activite['commande_date_soin'] =df_commande_activite['commande_date_soin'].transform(lambda x: excel_to_sql_date(x))
-    df_commande_activite['commande_perception'] =df_commande_activite['commande_perception'].transform(lambda x: excel_to_sql_date(x))
-    df_commande_activite['commande_date_remboursement'] =df_commande_activite['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
-    df_commande_activite['commande_date_encaissement'] =df_commande_activite['commande_date_encaissement'].transform(lambda x: excel_to_sql_date(x))
+    df_commande=get_client_id(df_commande, conn)
+    df_commande=get_commande_id(df_commande, conn)
 
-    df_activite= pd.read_sql_query('SELECT * FROM activite', conn) #on appelle df_activite pour l'injecter dans la fonction add_id_df()
+    df_commande=get_vendeur_id(df_commande, conn)
+    df_commande=get_type_activite_id(df_commande, conn)
+    df_commande=get_activite(df_commande, conn)
 
-    df_commande_activite=add_id_df(df_activite,df_commande_activite) #on ajoute la colonne activite_id à df_commande_activite
-    df_commande_activite=df_commande_activite.drop(['activite_nom'],axis=1) #on supprime activite_nom qui n'est pas dans la table commande_activite
-    
-    df_client=pd.read_sql_query('SELECT * FROM client', conn) #on appelle df_client pour l'injecter dans la fonction add_id_df()
-
-    # print(df_activite)
-
-    # print(df_commande_activite)
+    df_commande = df_commande[df_commande["activite_id"].notna()]  ######/!\/!\ PROBLEME L5 SEPTEMBRE : ACTIVITE ID INEXISTANT(ligne effacee) a corriger /!\ /!\ #####
+    print(df_commande)
+    # TODO : couple activite_id/commande_id dupliquee : (triplet id_cli, date d'achat pour la cle commande et activite_id) (JUIN)
+    df_commande.to_sql("commande_activite", con=conn, index=False, if_exists='append')
