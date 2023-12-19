@@ -83,7 +83,7 @@ def add_new_clients(df_to_add, connection) :
             client_to_add["client_mail"]=np.nan # on ajoute les colonnes client_mail et client_telephone pour correspondre au schema de la bdd
             client_to_add["client_telephone"]=np.nan
             client_to_add.to_sql("client", con=connection, index=False, if_exists='append') # on ajoute le client a la bdd
-            df_from_db = pd.concat([df_from_db, client_to_add], ignore_index=True) # ajoute le nouveau client au df local
+            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, client_to_add if not client_to_add.empty else None], ignore_index=True) # ajoute le nouveau client au df local
         add_client=True # on reinitialise la variable pour le prochain client
 
 def get_clients_id(df_to_get, df_from_db) :
@@ -126,7 +126,7 @@ def add_new_commands(df_to_add, connection) :
         if add_command :
             command_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
             command_to_add.to_sql("commande", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
-            df_from_db = pd.concat([df_from_db, command_to_add], ignore_index=True) # ajoute la nouvelle commande au df local
+            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, command_to_add if not command_to_add.empty else None], ignore_index=True) # ajoute la nouvelle commande au df local
         add_command=True # on reinitialise la variable pour la prochaine commande
     return df_res
 
@@ -151,7 +151,7 @@ for filepath in filepaths :
     df_type_structure=drop_existing_name(before_dico_type_structure_db, df_type_structure) # suppression des noms deja existants en bdd
     df_to_database(df_type_structure,"type_structure",conn) # insertion des nouveaux noms de structure en bdd
     after_dico_type_structure_db=database_to_dict("type_structure",conn) # dictionnaires des structures apres l'insertion
-    df_commande = df_commande.replace(after_dico_type_structure_db) # remplacement des noms de structure locals par leur id
+    df_commande["type_structure_nom"] = df_commande["type_structure_nom"].replace(after_dico_type_structure_db) # remplacement des noms de structure locals par leur id
 
 
     # meme chose avec la table type_transaction
@@ -161,7 +161,7 @@ for filepath in filepaths :
     df_type_transaction=drop_existing_name(before_dico_type_transaction_db, df_type_transaction)
     df_to_database(df_type_transaction,"type_transaction",conn)
     after_dico_type_transaction_db=database_to_dict("type_transaction",conn)
-    df_commande = df_commande.replace(after_dico_type_transaction_db)
+    df_commande["type_transaction_nom"] = df_commande["type_transaction_nom"].replace(after_dico_type_transaction_db)
 
 
     # meme chose avec la table moyen_paiement
@@ -171,7 +171,7 @@ for filepath in filepaths :
     df_moyen_paiement=drop_existing_name(before_dico_moyen_paiement_db, df_moyen_paiement)
     df_to_database(df_moyen_paiement,"moyen_paiement",conn)
     after_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
-    df_commande = df_commande.replace(after_dico_moyen_paiement_db)
+    df_commande["moyen_paiement_nom"] = df_commande["moyen_paiement_nom"].replace(after_dico_moyen_paiement_db)
 
 
     # table clients

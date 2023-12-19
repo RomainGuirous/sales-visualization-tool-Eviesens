@@ -3,6 +3,7 @@ import numpy as np
 import os
 from sqlalchemy import create_engine
 import re
+import mysql.connector
 pd.set_option('display.max_rows', 500)
 
 # commande
@@ -157,6 +158,63 @@ def get_activite(df_commande, connection) :
     df_res=df_res.drop(["type_activite_id", "vendeur_id", "commande_date_achat"], axis=1)
     return df_res
 
+def add_new_command_activite (df_to_add, connection) :
+    df_res = df_to_add # liste des commandes a rajouter en cours
+    df_from_db = pd.read_sql_query('SELECT activite_id, commande_id, commande_deplacement, commande_quantité, commande_reduction FROM commande_activite', connection)
+    add_command_activite=True # une commande_activite est ajoutee par defaut
+
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database="eviesens"
+    )
+    mycursor = mydb.cursor()
+
+    # compare les deux id entre eux
+    def same_line(i, j, dfcom, dfdb) :
+        command_id = float(dfcom.loc[i,"commande_id"])
+        command_id_db = float(dfdb.loc[j,"commande_id"])
+        activite_id = float(dfcom.loc[i,"activite_id"])
+        activite_id_db = float(dfdb.loc[j,"activite_id"])
+        if ( (command_id==command_id_db) & (activite_id==activite_id_db) ) :
+            return True
+        return False
+    
+    # fusionne deux lignes correspondant a la meme commande et activite
+    def fuse_line(i, j, dfcom, dfdb) :
+        id_com=str(dfcom.loc[i, "commande_id"])
+        id_act=str(dfcom.loc[i, "activite_id"])
+
+        deplacement=dfcom.loc[i, "commande_deplacement"]
+        deplacement_db=dfdb.loc[j, "commande_deplacement"]
+        d=str(int(deplacement)+int(deplacement_db))
+
+        quantite=dfcom.loc[i, "commande_quantité"]
+        quantite_db=dfdb.loc[j, "commande_quantité"]
+        q=str(int(quantite)+int(quantite_db))
+
+        reduction=dfcom.loc[i, "commande_reduction"]
+        reduction_db=dfdb.loc[j, "commande_reduction"]
+        r=str(int(reduction)+int(reduction_db))
+
+        sql = ("UPDATE commande_activite SET commande_deplacement = "+d+" ,commande_quantité = "+q+", commande_reduction = "+r
+        +" WHERE commande_id = "+id_com+" AND activite_id = "+id_act)
+        
+        mycursor.execute(sql)
+        mydb.commit()
+    for i in df_res.index :
+        for j in df_from_db.index :
+            if same_line(i, j, df_res, df_from_db) :
+                add_command_activite=False # si la commande_activite existe deja, on ajoute pas la nouvelle ligne
+                fuse_line(i, j, df_res, df_from_db) # a la place on fusionne les donnees dans la ligne deja existante
+        if add_command_activite :
+            command_activite_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
+            command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
+            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, command_activite_to_add if not command_activite_to_add.empty else None], ignore_index=True) # ajoute la nouvelle commande au df local  
+        add_command_activite=True # on reinitialise la variable pour la prochaine commande
+    return df_res
+
 #Main
 conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
@@ -182,7 +240,7 @@ for filepath in filepaths :
     df_commande=get_type_activite_id(df_commande, conn)
     df_commande=get_activite(df_commande, conn)
 
+    # TODO decommenter si activite existe
     df_commande = df_commande[df_commande["activite_id"].notna()]  ######/!\/!\ PROBLEME L5 SEPTEMBRE : ACTIVITE ID INEXISTANT(ligne effacee) a corriger /!\ /!\ #####
-    print(df_commande)
-    # TODO : couple activite_id/commande_id dupliquee : (triplet id_cli, date d'achat pour la cle commande et activite_id) (JUIN)
-    df_commande.to_sql("commande_activite", con=conn, index=False, if_exists='append')
+
+    add_new_command_activite(df_commande,conn)

@@ -75,7 +75,7 @@ def add_type_act(df_to_add, connection) :
         if add_type_act :
             type_act_to_add=df_res.loc[[i]] #on recupere la ligne de la fiche a rajouter
             type_act_to_add.to_sql("type_activite", con=connection, index=False, if_exists='append') # on ajoute le type_act a la bdd
-            df_from_db = pd.concat([df_from_db, type_act_to_add], ignore_index=True) # ajoute le nouveau type_act au df local
+            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, type_act_to_add if not type_act_to_add.empty else None], ignore_index=True) # ajoute le nouveau type_act au df local
         add_type_act=True # on reinitialise la variable pour le prochain type_act
 
 def get_type_act_id(df_to_get, connection) :
@@ -119,7 +119,7 @@ def add_new_activite(df_to_add, connection) :
         if add_activite :
             activite_to_add=df_res.loc[[i]] #on recupere la ligne de l'activite a rajouter
             activite_to_add.to_sql("activite", con=connection, index=False, if_exists='append') # on ajoute l'activite a la bdd
-            df_from_db = pd.concat([df_from_db, activite_to_add], ignore_index=True) # ajoute la nouvelle activite au df local
+            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, activite_to_add if not activite_to_add.empty else None], ignore_index=True) # ajoute la nouvelle activite au df local
         add_activite=True # on reinitialise la variable pour la prochaine activite
     return df_res
 
