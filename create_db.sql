@@ -72,7 +72,7 @@ CREATE TABLE commande_activite(
    activite_id INT,
    commande_id INT,
    commande_date_soin DATE,
-   commande_quantité DECIMAL(15,2) NOT NULL,
+   commande_quantite DECIMAL(15,2) NOT NULL,
    commande_deplacement DECIMAL(15,2) NOT NULL,
    commande_reduction DECIMAL(15,2) NOT NULL,
    commande_date_encaissement DATE,

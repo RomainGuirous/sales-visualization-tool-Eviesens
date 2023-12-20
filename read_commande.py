@@ -57,12 +57,12 @@ def excel_to_sql_date(date):
 
 # compare deux chaines de charactere, si ils sont egaux ou tous les deux nuls renvoie True, sinon renvoie False
 def equal_or_both_null(s1, s2) :
+    if pd.isnull(s1) & pd.isnull(s2) :
+        return True
+    if pd.isnull(s1) | pd.isnull(s2) :
+        return False
     s1_2=str(s1)
     s2_2=str(s2)
-    if pd.isnull(s1_2) & pd.isnull(s2_2) :
-        return True
-    if pd.isnull(s1_2) | pd.isnull(s2_2) :
-        return False
     if s1_2.lower() == s2_2.lower() :
         return True
     return False
@@ -71,7 +71,6 @@ def add_new_clients(df_to_add, connection) :
     df_res=df_to_add
     df_from_db = pd.read_sql_query('SELECT client_id,client_nom,client_prenom FROM client', connection)
     df_res=df_res[["client_nom","client_prenom"]]
-    df_res = df_res.astype({"client_nom" : str, "client_prenom" : str})
     add_client=True #un client est par defaut inconnu et doit etre ajoute a la bdd
     for i in df_res.index :
         for j in df_from_db.index :
@@ -130,6 +129,7 @@ def add_new_commands(df_to_add, connection) :
         add_command=True # on reinitialise la variable pour la prochaine commande
     return df_res
 
+
 #Main
 conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
@@ -142,7 +142,6 @@ for filepath in filepaths :
     print(filepath)
     df=pd.read_csv(filepath)
     df_commande=select_commande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
-    
     
     # table type_structure
     before_dico_type_structure_db=database_to_dict("type_structure",conn) # recupere la liste des structures existantes en bdd

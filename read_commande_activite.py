@@ -28,18 +28,18 @@ def select_commande(df) :
     df_commande = df_commande.rename(columns={'Date soin': 'commande_date_soin', 'Nom': 'client_nom',
                                               'Prénom': 'client_prenom', 'Type': 'type_activite_nom', 'Vendeur': 'vendeur_nom',
                                               'Intitulé': 'activite_nom', 'Déplacement': 'commande_deplacement',
-                                              'Quantité': 'commande_quantité', 'Reduction': 'commande_reduction',
+                                              'Quantité': 'commande_quantite', 'Reduction': 'commande_reduction',
                                               "Date d'achat": 'commande_date_achat', 'Date Encaissement ': 'commande_date_encaissement',
                                               'Date perception': 'commande_date_perception', 'Date remboursement': 'commande_date_remboursement'})
     return df_commande
 
 def equal_or_both_null(s1, s2) :
+    if pd.isnull(s1) & pd.isnull(s2) :
+        return True
+    if pd.isnull(s1) | pd.isnull(s2) :
+        return False
     s1_2=str(s1)
     s2_2=str(s2)
-    if pd.isnull(s1_2) & pd.isnull(s2_2) :
-        return True
-    if pd.isnull(s1_2) | pd.isnull(s2_2) :
-        return False
     if s1_2.lower() == s2_2.lower() :
         return True
     return False
@@ -60,10 +60,10 @@ def get_client_id(df_commande, connection) :
     df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', connection)
     df_res["client_id"]=np.nan
     def same_line(i, j, dfcom, dfdb) :
-        nom = str(dfcom.loc[i,"client_nom"]).lower()
-        nom_db = str(dfdb.loc[j,"client_nom"]).lower()
-        prenom = str(dfcom.loc[i,"client_prenom"]).lower()
-        prenom_db = str(dfdb.loc[j,"client_prenom"]).lower()
+        nom = dfcom.loc[i,"client_nom"]
+        nom_db = dfdb.loc[j,"client_nom"]
+        prenom = dfcom.loc[i,"client_prenom"]
+        prenom_db = dfdb.loc[j,"client_prenom"]
         if ( (equal_or_both_null(nom,nom_db)) & (equal_or_both_null(prenom,prenom_db)) ) :
             return True
         return False
@@ -102,7 +102,7 @@ def get_vendeur_id(df_commande, connection) :
     df_res["vendeur_id"]=np.nan
     for i in df_res.index :
         for j in df_from_db.index :
-            if(equal_or_both_null(df_res.loc[i, "vendeur_nom"].lower(), df_from_db.loc[j, "vendeur_nom"].lower())) :
+            if(equal_or_both_null(df_res.loc[i, "vendeur_nom"], df_from_db.loc[j, "vendeur_nom"])) :
                 df_res.loc[i, "vendeur_id"]=df_from_db.loc[j, "vendeur_id"] # quand un couple nom/prenom est trouve dans la bdd, son id lui est associe
     pd.options.mode.chained_assignment = "warn"
     df_res=df_res.drop(["vendeur_nom"], axis=1)
@@ -160,7 +160,7 @@ def get_activite(df_commande, connection) :
 
 def add_new_command_activite (df_to_add, connection) :
     df_res = df_to_add # liste des commandes a rajouter en cours
-    df_from_db = pd.read_sql_query('SELECT activite_id, commande_id, commande_deplacement, commande_quantité, commande_reduction FROM commande_activite', connection)
+    df_from_db = pd.read_sql_query('SELECT activite_id, commande_id, commande_deplacement, commande_quantite, commande_reduction FROM commande_activite', connection)
     add_command_activite=True # une commande_activite est ajoutee par defaut
 
     mydb = mysql.connector.connect(
@@ -190,15 +190,15 @@ def add_new_command_activite (df_to_add, connection) :
         deplacement_db=dfdb.loc[j, "commande_deplacement"]
         d=str(int(deplacement)+int(deplacement_db))
 
-        quantite=dfcom.loc[i, "commande_quantité"]
-        quantite_db=dfdb.loc[j, "commande_quantité"]
+        quantite=dfcom.loc[i, "commande_quantite"]
+        quantite_db=dfdb.loc[j, "commande_quantite"]
         q=str(int(quantite)+int(quantite_db))
 
         reduction=dfcom.loc[i, "commande_reduction"]
         reduction_db=dfdb.loc[j, "commande_reduction"]
         r=str(int(reduction)+int(reduction_db))
 
-        sql = ("UPDATE commande_activite SET commande_deplacement = "+d+" ,commande_quantité = "+q+", commande_reduction = "+r
+        sql = ("UPDATE commande_activite SET commande_deplacement = "+d+" ,commande_quantite = "+q+", commande_reduction = "+r
         +" WHERE commande_id = "+id_com+" AND activite_id = "+id_act)
         
         mycursor.execute(sql)
@@ -220,6 +220,7 @@ conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
 filepaths=os.listdir("./donnees/fiches_mensuelles/") #récupère liste des noms des fichiers dans le dossier "fiches_mensuelles"
 
+
 for i in range(len(filepaths)) :
     filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i] #on récupère liste des filepath de chaque fiche mensuelle
 
@@ -239,8 +240,5 @@ for filepath in filepaths :
     df_commande=get_vendeur_id(df_commande, conn)
     df_commande=get_type_activite_id(df_commande, conn)
     df_commande=get_activite(df_commande, conn)
-
-    # TODO decommenter si activite existe
-    df_commande = df_commande[df_commande["activite_id"].notna()]  ######/!\/!\ PROBLEME L5 SEPTEMBRE : ACTIVITE ID INEXISTANT(ligne effacee) a corriger /!\ /!\ #####
 
     add_new_command_activite(df_commande,conn)

@@ -18,18 +18,6 @@ df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("client", con=conn, index=False, if_exists='append')
 
-#avr-2023 => ligne 5
-d={"client_id": 1002, "client_nom": "Vi", "client_prenom": "Franck"}
-df= {k:[v] for k,v in d.items()}
-df=pd.DataFrame(df)
-df.to_sql("client", con=conn, index=False, if_exists='append')
-
-#mars-2023 => ligne 16
-d={"client_id": 1003, "client_nom": "Villa Yoga"}
-df= {k:[v] for k,v in d.items()}
-df=pd.DataFrame(df)
-df.to_sql("client", con=conn, index=False, if_exists='append')
-
 #mars-2023 => ligne 15
 d={"client_id": 1004, "client_nom": "Ma bonne Etoile"}
 df= {k:[v] for k,v in d.items()}
@@ -52,14 +40,14 @@ df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande", con=conn, index=False, if_exists='append')
 
-#avril-2023 => manque Date d'achat ligne 5(excel) (remplacé par 06/04/2023 = date de soin)
-d={"commande_id": 1002, "commande_date_achat": "2023-04-06", "client_id": 1002, "moyen_paiement_id": 4, "type_transaction_id": 1, "type_structure_id":1}
+#avril-2023 => manque Date d'achat ligne 5(excel) (remplacé par 06/04/2023 = date de soin), client existe deja en bdd id : 624
+d={"commande_id": 1002, "commande_date_achat": "2023-04-06", "client_id": 624, "moyen_paiement_id": 4, "type_transaction_id": 1, "type_structure_id":1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande", con=conn, index=False, if_exists='append')
 
-#mars-2023 => manque Date d'achat ligne 16(excel) (remplacé par 12/03/2023 = date de soin)
-d={"commande_id": 1003, "commande_date_achat": "2023-03-12", "client_id": 1003, "moyen_paiement_id": 2, "type_transaction_id": 1, "type_structure_id":4}
+#mars-2023 => manque Date d'achat ligne 16(excel) (remplacé par 12/03/2023 = date de soin), client existe deja en bdd id : 654
+d={"commande_id": 1003, "commande_date_achat": "2023-03-12", "client_id": 654, "moyen_paiement_id": 2, "type_transaction_id": 1, "type_structure_id":4}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande", con=conn, index=False, if_exists='append')
@@ -74,31 +62,31 @@ df.to_sql("commande", con=conn, index=False, if_exists='append')
 
 ## ajout dans commande_activite
 #oct-2023 => ligne 9
-d={"activite_id": 341, "commande_id": 1000, "commande_date_soin": "2023-10-11", "commande_deplacement": 0, "commande_reduction": 5, "commande_quantité" : 0}
+d={"activite_id": 341, "commande_id": 1000, "commande_date_soin": "2023-10-11", "commande_deplacement": 0, "commande_reduction": 5, "commande_quantite" : 1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande_activite", con=conn, index=False, if_exists='append')
 
 #juin-2023 => ligne 1
-d={"activite_id": 227, "commande_id": 1001, "commande_date_soin": "2023-06-03", "commande_deplacement": 0, "commande_reduction": 5, "commande_date_encaissement": "2023-06-04" , "commande_quantité" : 0}
+d={"activite_id": 227, "commande_id": 1001, "commande_date_soin": "2023-06-03", "commande_deplacement": 0, "commande_reduction": 5, "commande_date_encaissement": "2023-06-04" , "commande_quantite" : 1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande_activite", con=conn, index=False, if_exists='append')
 
 #avr-2023 => ligne 5
-d={"activite_id": 39, "commande_id": 1002, "commande_date_soin": "2023-04-06", "commande_deplacement": 0, "commande_reduction": 10 , "commande_quantité" : 0}
+d={"activite_id": 39, "commande_id": 1002, "commande_date_soin": "2023-04-06", "commande_deplacement": 0, "commande_reduction": 10 , "commande_quantite" : 1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande_activite", con=conn, index=False, if_exists='append')
 
 #mars-2023 => ligne 16
-d={"activite_id": 287, "commande_id": 1003, "commande_date_soin": "2023-03-12", "commande_deplacement": 0, "commande_reduction": 0, "commande_date_perception": "2023-03-15", "commande_quantité" : 0}
+d={"activite_id": 287, "commande_id": 1003, "commande_date_soin": "2023-03-12", "commande_deplacement": 0, "commande_reduction": 0, "commande_date_perception": "2023-03-15", "commande_quantite" : 1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande_activite", con=conn, index=False, if_exists='append')
 
 #mars-2023 => ligne 15
-d={"activite_id": 287, "commande_id": 1004, "commande_date_soin": "2023-03-09", "commande_deplacement": 0, "commande_reduction": 0, "commande_date_encaissement": "2023-03-29", "commande_date_perception": "2023-03-31", "commande_quantité" : 0}
+d={"activite_id": 287, "commande_id": 1004, "commande_date_soin": "2023-03-09", "commande_deplacement": 0, "commande_reduction": 0, "commande_date_encaissement": "2023-03-29", "commande_date_perception": "2023-03-31", "commande_quantite" : 1}
 df= {k:[v] for k,v in d.items()}
 df=pd.DataFrame(df)
 df.to_sql("commande_activite", con=conn, index=False, if_exists='append')

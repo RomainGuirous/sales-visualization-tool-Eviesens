@@ -52,13 +52,13 @@ def drop_existing_name(dico, df) :
 
 # compare deux chaines de charactere, si ils sont egaux ou tous les deux nuls renvoie True, sinon renvoie False
 def equal_or_both_null(s1, s2) :
+    if pd.isnull(s1) & pd.isnull(s2) :
+        return True
+    if pd.isnull(s1) | pd.isnull(s2) :
+        return False
     s1_2=str(s1)
     s2_2=str(s2)
-    if pd.isnull(s1_2) & pd.isnull(s2_2) :
-        return True
-    if pd.isnull(s1_2) | pd.isnull(s2_2) :
-        return False
-    if s1_2.lower()==s2_2.lower() :
+    if s1_2.lower() == s2_2.lower() :
         return True
     return False
 
@@ -143,7 +143,7 @@ for filepath in filepaths :
     df_vendeur=drop_existing_name(before_dico_vendeur_db, df_vendeur) #supprime les noms deja existants en bdd
     df_to_database(df_vendeur,"vendeur",conn)
     after_dico_vendeur_db=database_to_dict("vendeur",conn) #dictionnaires des vendeurs / types activites apres l'insertion
-    df_activite= df_activite.replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
+    df_activite["vendeur_nom"]= df_activite["vendeur_nom"].replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
     
     #table type_activite
     add_type_act(df_activite, conn)
