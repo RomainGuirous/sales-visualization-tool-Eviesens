@@ -17,7 +17,3 @@ with open("missing_activite.py", encoding="utf-8") as f:
 print("read_commande_activite.py")
 with open("read_commande_activite.py", encoding="utf-8") as f:
     exec(f.read())
-
-print("missing_data.py")
-with open("missing_data.py", encoding="utf-8") as f:
-    exec(f.read())

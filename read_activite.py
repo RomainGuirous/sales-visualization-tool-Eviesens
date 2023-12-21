@@ -11,6 +11,7 @@ pd.set_option('display.max_rows', 500)
 def select_activite(df) :
     df_activite = df.iloc[:,24:28] # selectionne toutes les lignes des colonnes Y a AB d'excel (colonnes 25 a 28 du csv)
     df_activite=df_activite.dropna() #supprime Nan
+    df_activite=df_activite.astype({'Prix': 'string'})
     df_activite["Prix"]=df_activite["Prix"].replace(regex='[^,.0-9]', value=np.nan) # remplace tout ce qui n'est pas un chiffre, un . ou une , par Nan
     df_activite["Prix"]=df_activite["Prix"].str.replace(',', '.', regex=True) # remplace les , par des . dans la colonne Prix
     df_activite = df_activite.rename(columns={'Vendeur.1': 'vendeur_nom', 'Intitulé.1': 'activite_nom', 'Prix':'activite_prix', 'Type.1':'type_activite_nom'}) #on change nom col
@@ -59,6 +60,13 @@ def equal_or_both_null(s1, s2) :
     s1_2=str(s1)
     s2_2=str(s2)
     if s1_2.lower() == s2_2.lower() :
+        return True
+    return False
+
+def is_valid_filename(filename) :
+    contains_month=bool(re.search(r"(janvier|f(e|é)vrier|mars|avril|mai|juin|juillet|ao(u|û)t|septembre|octobre|novembre|d(e|é)cembre)", filename.lower()))
+    contains_year=bool(re.search(r"[0-9]{4}", filename))
+    if contains_month & contains_year :
         return True
     return False
 
@@ -126,7 +134,12 @@ def add_new_activite(df_to_add, connection) :
 #Main
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
-filepaths=os.listdir("./donnees/fiches_mensuelles/")
+filepaths_list=os.listdir("./donnees/fiches_mensuelles/")
+
+filepaths=[]
+for i in range(len(filepaths_list)) :
+    if is_valid_filename(filepaths_list[i]) : # ne lit que les fichiers contenant un mois et une annee
+        filepaths.append(filepaths_list[i])
 
 for i in range(len(filepaths)) :
     filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i]
@@ -160,6 +173,5 @@ for filepath in filepaths :
     mois, annee = str_to_month_year(filename)
     df_activite["activite_mois"]=annee+"-"+mois+"-01" #YYYY/MM/dd
 
-    # # insert le tableau activite dans la bdd
+    # insert le tableau activite dans la bdd
     add_new_activite(df_activite, conn)
-    # df_to_database(df_activite,"activite",conn)
