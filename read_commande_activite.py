@@ -297,22 +297,11 @@ for filepath in filepaths :
     df_commande['commande_date_perception'] = df_commande['commande_date_perception'].transform(lambda x: excel_to_sql_date(x))
     df_commande['commande_date_remboursement'] = df_commande['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
 
-    print(df_commande)
     df_commande=get_client_id(df_commande, conn)
-    print("get_client_id")
-    print(df_commande)
     df_commande=get_commande_id(df_commande, conn)
-    print("get_commande_id")
-    print(df_commande)
 
     df_commande=get_vendeur_id(df_commande, conn)
-    print("get_vendeur_id")
-    print(df_commande)
     df_commande=get_type_activite_id(df_commande, conn)
-    print("get_type_activite_id")
-    print(df_commande)
     df_commande=get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, conn)
-    print("get_activite_id")
-    print(df_commande)
 
     add_new_command_activite(df_commande,conn)
