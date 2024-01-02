@@ -126,17 +126,18 @@ df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vende
 ### CHIFFRE D'AFFAIRE ###
 ##  CA PAR ATELIER / AN
 def show_atelier_an(df, annee) :
-    df_atelier_an=CA_atelier_an(df, 2023)
+    df_atelier_an=CA_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_atelier_an.index
     x=df_atelier_an["prix_x_qte"]
-    ax.barh(y, x)
+    bars=ax.barh(y, x)
 
+    ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par atelier")
-    plt.show()
 
-# show_atelier_an(df_commande, 2023)
+show_atelier_an(df_commande, 2023)
+
 
 # ## CA PAR ATELIER / MOIS
 def show_atelier_mois(df, mois, annee) :
@@ -144,16 +145,16 @@ def show_atelier_mois(df, mois, annee) :
     fig, ax = plt.subplots()
     y=df_atelier_mois.index
     x=df_atelier_mois["prix_x_qte"]
-    ax.barh(y, x)
+    bars=ax.barh(y, x)
 
+    ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
     de_ou_d = "d'" if mois in (4, 8, 10) else "de "
-    ax.set_title(f"Chiffre d'affaire du mois {de_ou_d}{ n_mois_to_mois(mois) } par atelier")
-    plt.show()
+    ax.set_title(f"Chiffre d'affaire du mois {de_ou_d}{ n_mois_to_mois(mois) } {annee} par atelier")
 
-# show_atelier_mois(df_commande,2,2023)
-for i in range(1, 13):
-    show_atelier_mois(df_commande,i,2023)
+show_atelier_mois(df_commande,2,2023)
+# for i in range(1, 13):
+#     show_atelier_mois(df_commande,i,2023)
 
 
 # CA / VENDEUR
@@ -162,20 +163,48 @@ def show_vendeur_an(df, annee) :
     fig, ax = plt.subplots()
     y=df_vendeur_an.index
     x=df_vendeur_an["prix_x_qte"]
-    ax.bar(y, x)
+    bars=ax.bar(y, x)
 
-    ax.set_title(f"Chiffre d'affaire annuel ({annee}) par vendeur")
+    ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
-    plt.show()
+    ax.set_title(f"Chiffre d'affaire annuel ({annee}) par vendeur")
 
 show_vendeur_an(df_commande, 2023)
 
+
 ## CA / (VENDEUR, ATELIER)
-# CA_vendeur_atelier_an(df_commande,2023) #annee à adapter
-# print(CA_vendeur_atelier_an(df_commande,2023))
+def show_vendeur_atelier_an(df, annee) :
+    df_vendeur_atelier_an=CA_vendeur_atelier_an(df, annee)
+    fig, ax = plt.subplots()
+    l_vendeurs=df_vendeur_atelier_an.index.get_level_values("vendeur_nom").to_list() #recupere les noms des vendeurs
+    l_vendeurs=list(dict.fromkeys(l_vendeurs)) # retire les doublons
+
+    for v in l_vendeurs :
+        df_temp = df_vendeur_atelier_an.filter(like=v, axis=0) # le dataframe correspondant au vendeur
+        y=df_temp.index.get_level_values("activite_nom").to_list()
+        x=df_temp["prix_x_qte"].values.tolist()
+        bars=ax.barh(y, x, label=v) # cree les barres correspondantes et rajoute la legende associee
+        ax.bar_label(bars)
+
+    ax.legend()
+    plt.gcf().subplots_adjust(left=.25)
+    ax.set_title(f"Chiffre d'affaire annuel ({annee}) par atelier et par vendeur")
+
+show_vendeur_atelier_an(df_commande, 2023)
 
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
-# nbr_atelier_an(df_commande,2023) #annee à adapter
-# print(nbr_atelier_an(df_commande,2023))
+def show_nbr_atelier_an(df, annee) :
+    df_nbr_atelier_an = nbr_atelier_an(df, annee)
+    fig, ax = plt.subplots()
+    y=df_nbr_atelier_an["activite_nom"]
+    x=df_nbr_atelier_an["commande_quantite"]
+    bars=ax.barh(y, x)
+
+    ax.bar_label(bars)
+    plt.gcf().subplots_adjust(left=.27)
+    ax.set_title(f"quantite commandee annuelle ({annee}) par atelier")
+
+show_nbr_atelier_an(df_commande, 2023)
+plt.show()
