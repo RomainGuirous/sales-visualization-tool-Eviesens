@@ -163,8 +163,6 @@ df_activite_vendeur=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on
 df_commande=df_table_commande_activite.join(df_table_activite.set_index('activite_id'),on=('activite_id'), how="left")
 df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
 df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
-# print(df_commande)
-
 
 # ### CHIFFRE D'AFFAIRE ###
 # ##  CA PAR ATELIER / AN
