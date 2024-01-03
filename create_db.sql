@@ -69,7 +69,7 @@ CREATE TABLE commande(
 );
 
 CREATE TABLE commande_activite(
-   Id_commande_activite INT AUTO_INCREMENT,
+   commande_activite_id INT AUTO_INCREMENT,
    commande_date_soin DATE,
    commande_quantite DECIMAL(15,2)   NOT NULL,
    commande_deplacement DECIMAL(15,2)   NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE commande_activite(
    commande_date_remboursement DATE,
    commande_id INT NOT NULL,
    activite_id INT NOT NULL,
-   PRIMARY KEY(Id_commande_activite),
+   PRIMARY KEY(commande_activite_id),
    FOREIGN KEY(commande_id) REFERENCES commande(commande_id),
    FOREIGN KEY(activite_id) REFERENCES activite(activite_id)
 );
