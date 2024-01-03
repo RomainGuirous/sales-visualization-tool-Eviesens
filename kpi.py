@@ -109,7 +109,9 @@ def nbr_atelier_an(df_entree,an):
     df_nbr_atelier_an=df_nbr_atelier_an.groupby(by=['activite_nom','type_activite_id']).sum().sort_values(by=['type_activite_id']) # donne le chiffre d'affaire total par activite
     df2=df_table_type_activite.merge(df_nbr_atelier_an,on=('type_activite_id'), how="left")
     df2=df2[['activite_nom','commande_quantite']].sort_values(by=['commande_quantite'],ascending=False)
+    df2=df2.rename(columns={"commande_quantite":"nbr_ateliers"})
     df2=df2.fillna(0)
+    df2['nbr_ateliers']=df2['nbr_ateliers'].astype('Int32')
     return df2
     # # print(df_nbr[df_nbr['activite_nom']=='Intervention Extérieure sur devis']) #permet de selectionner une activité en particulier, est-ce que je le mets dans une autre ft?
 
@@ -153,6 +155,7 @@ df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
 df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="left")
 df_activite=df_activite.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
+print(type(df_activite['commande_quantite']))
 
 #jointure avec table vendeur
 df_activite_vendeur=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# on transforme df_activite pour incorporer vendeur_nom
@@ -184,10 +187,10 @@ df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'
 # print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
 
 
-# ### NOMBRE ACHAT ###
-# ## NA ATELIER / AN
+### NOMBRE ACHAT ###
+## NA ATELIER / AN
 # nbr_atelier_an(df_activite,2023) #annee à adapter
-# print(nbr_atelier_an(df_activite,2023))
+print(nbr_atelier_an(df_activite,2023))
 
 
 # ### NOMBRE PERSONNES ####
