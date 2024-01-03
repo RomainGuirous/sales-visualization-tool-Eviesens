@@ -124,7 +124,7 @@ def get_vendeur_id(df_commande, connection) :
     df_res=df_res.drop(["vendeur_nom"], axis=1)
     return df_res
 
-# remplace les colonnes type_activite_nom et activite_nom par l'id associe
+# remplace les colonnes type_activite_nom et activite_nom par l'id type_activite associe
 def get_type_activite_id(df_commande, connection) :
     pd.options.mode.chained_assignment = None
     df_res=df_commande
@@ -148,19 +148,19 @@ def get_type_activite_id(df_commande, connection) :
 
 # cree une intervention a partir d'une commande et de l'id general du vendeur (Eviesens) et de l'id du type correspondant (intervention exterieure, Prestation)
 def create_intervention(i, df_commande, id_vendeur_intervention, id_type_intervention, conn) :
-        line_to_add=df_commande.loc[i, ["activite_prix", "commande_date_achat"]]
-        mois=line_to_add["commande_date_achat"][5:7]
-        annee=line_to_add["commande_date_achat"][0:4]
-        line_to_add["activite_mois"]=annee+"-"+mois+"-"+"01"
-        line_to_add["activite_prix"]=re.sub(r",", ".", str(line_to_add["activite_prix"]))
-        d = {
-                'activite_prix': [line_to_add["activite_prix"]],
-                'activite_mois': [line_to_add["activite_mois"]],
-                'vendeur_id': [id_vendeur_intervention],
-                'type_activite_id': [id_type_intervention]
-        }
-        line_to_add=pd.DataFrame(d)
-        line_to_add.to_sql("activite", con=conn, index=False, if_exists='append') # on ajoute la commande a la bdd
+    line_to_add=df_commande.loc[i, ["activite_prix", "commande_date_achat"]]
+    mois=line_to_add["commande_date_achat"][5:7]
+    annee=line_to_add["commande_date_achat"][0:4]
+    line_to_add["activite_mois"]=annee+"-"+mois+"-"+"01"
+    line_to_add["activite_prix"]=re.sub(r",", ".", str(line_to_add["activite_prix"]))
+    d = {
+            'activite_prix': [line_to_add["activite_prix"]],
+            'activite_mois': [line_to_add["activite_mois"]],
+            'vendeur_id': [id_vendeur_intervention],
+            'type_activite_id': [id_type_intervention]
+    }
+    line_to_add=pd.DataFrame(d)
+    line_to_add.to_sql("activite", con=conn, index=False, if_exists='append') # on ajoute la commande a la bdd
 
 # recupere l'intervention correspondante au prix et mois de la commande, de l'id general du vendeur (Eviesens) et de l'id du type correspondant (intervention exterieure, Prestation)
 def get_intervention_id (i, df_commande, id_vendeur_intervention, id_type_intervention, connection) :
@@ -183,7 +183,8 @@ def get_intervention_id (i, df_commande, id_vendeur_intervention, id_type_interv
         if(same_line(i, j, df_commande, activites, id_vendeur_intervention ,id_type_intervention)) :
             return activites.loc[j, "activite_id"]
 
-# recupere l'id de l'activite a partir de l'id du type d'activite, de l'id du vendeur et de la date d'achat (mois et annee) 
+# recupere l'id de l'activite a partir de l'id du type d'activite, de l'id du vendeur et de la date d'achat (mois et annee)
+# cree une nouvelle intervention exterieure si il s'agit d'un devis
 def get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, connection) :
     pd.options.mode.chained_assignment = None
     df_res=df_commande
@@ -221,59 +222,9 @@ def get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, 
 
 def add_new_command_activite (df_to_add, connection) :
     df_res = df_to_add # liste des commandes a rajouter en cours
-    df_from_db = pd.read_sql_query('SELECT activite_id, commande_id, commande_deplacement, commande_quantite, commande_reduction FROM commande_activite', connection)
-    add_command_activite=True # une commande_activite est ajoutee par defaut
-
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="eviesens"
-    )
-    mycursor = mydb.cursor()
-
-    # compare les deux id entre eux
-    def same_line(i, j, dfcom, dfdb) :
-        command_id = float(dfcom.loc[i,"commande_id"])
-        command_id_db = float(dfdb.loc[j,"commande_id"])
-        activite_id = float(dfcom.loc[i,"activite_id"])
-        activite_id_db = float(dfdb.loc[j,"activite_id"])
-        if ( (command_id==command_id_db) & (activite_id==activite_id_db) ) :
-            return True
-        return False
-    
-    # fusionne deux lignes correspondant a la meme commande et activite
-    def fuse_line(i, j, dfcom, dfdb) :
-        id_com=str(dfcom.loc[i, "commande_id"])
-        id_act=str(dfcom.loc[i, "activite_id"])
-
-        deplacement=dfcom.loc[i, "commande_deplacement"]
-        deplacement_db=dfdb.loc[j, "commande_deplacement"]
-        d=str(int(deplacement)+int(deplacement_db))
-
-        quantite=dfcom.loc[i, "commande_quantite"]
-        quantite_db=dfdb.loc[j, "commande_quantite"]
-        q=str(int(quantite)+int(quantite_db))
-
-        reduction=dfcom.loc[i, "commande_reduction"]
-        reduction_db=dfdb.loc[j, "commande_reduction"]
-        r=str(int(reduction)+int(reduction_db))
-
-        sql = ("UPDATE commande_activite SET commande_deplacement = "+d+" ,commande_quantite = "+q+", commande_reduction = "+r
-        +" WHERE commande_id = "+id_com+" AND activite_id = "+id_act)
-        
-        mycursor.execute(sql)
-        mydb.commit()
     for i in df_res.index :
-        for j in df_from_db.index :
-            if same_line(i, j, df_res, df_from_db) :
-                add_command_activite=False # si la commande_activite existe deja, on ajoute pas la nouvelle ligne
-                fuse_line(i, j, df_res, df_from_db) # a la place on fusionne les donnees dans la ligne deja existante
-        if add_command_activite :
-            command_activite_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
-            command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
-            df_from_db = pd.concat([df_from_db if not df_from_db.empty else None, command_activite_to_add if not command_activite_to_add.empty else None], ignore_index=True) # ajoute la nouvelle commande au df local  
-        add_command_activite=True # on reinitialise la variable pour la prochaine commande
+        command_activite_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
+        command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
     return df_res
 
 #Main
@@ -297,11 +248,11 @@ for filepath in filepaths :
     df_commande['commande_date_perception'] = df_commande['commande_date_perception'].transform(lambda x: excel_to_sql_date(x))
     df_commande['commande_date_remboursement'] = df_commande['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
 
-    df_commande=get_client_id(df_commande, conn)
-    df_commande=get_commande_id(df_commande, conn)
+    df_commande=get_client_id(df_commande, conn) # recupere l'id des clients 
+    df_commande=get_commande_id(df_commande, conn) # recupere l'id des commandes
 
-    df_commande=get_vendeur_id(df_commande, conn)
-    df_commande=get_type_activite_id(df_commande, conn)
-    df_commande=get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, conn)
+    df_commande=get_vendeur_id(df_commande, conn) # recupere l'id des vendeurs
+    df_commande=get_type_activite_id(df_commande, conn) # recupere l'id du type d'activite
+    df_commande=get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, conn) # recupere l'id de l'activite, cree une intervention exterieure si besoin
 
-    add_new_command_activite(df_commande,conn)
+    add_new_command_activite(df_commande,conn) # ajoute les lignes dans la bdd
