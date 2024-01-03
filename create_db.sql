@@ -71,7 +71,7 @@ CREATE TABLE commande(
 CREATE TABLE commande_activite(
    commande_activite_id INT AUTO_INCREMENT,
    commande_date_soin DATE,
-   commande_quantite DECIMAL(15,2)   NOT NULL,
+   commande_quantite INT NOT NULL,
    commande_deplacement DECIMAL(15,2)   NOT NULL,
    commande_reduction DECIMAL(15,2)   NOT NULL,
    commande_date_encaissement DATE,
@@ -83,8 +83,3 @@ CREATE TABLE commande_activite(
    FOREIGN KEY(commande_id) REFERENCES commande(commande_id),
    FOREIGN KEY(activite_id) REFERENCES activite(activite_id)
 );
-
-
-
-
-
