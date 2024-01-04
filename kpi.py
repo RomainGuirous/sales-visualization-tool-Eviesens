@@ -267,9 +267,7 @@ df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'
 df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
 df_commande=df_commande.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
 
-
-# df_commande[df_commande['type_transaction_nom'] =='Remboursement']['activite_prix'].map( lambda x : -x)
-# print(df_commande[df_commande['type_transaction_nom'] =='Remboursement']['activite_prix'])
+#on transforme les prix des lignes Remboursement en négatif
 df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite_prix']=df_commande[df_commande['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
 #loc => 1er argument: ligne (ici filtre) 2eme argument:colonne
 
