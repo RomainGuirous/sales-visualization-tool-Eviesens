@@ -24,24 +24,17 @@ pd.options.mode.chained_assignment = None
                                     *CA moyen
 '''                
 
-#histogramme
-#-> 1 activite => tous les mois
-
-#histogramme
-#-> CA tot par mois
-
-#histogramme
-#->CA activite / an
-
-#courbe (CA/mois)
-#-> activites
-
-#histogramme (abs:mois, ord:CA)
-#vendeur
+#transforme les numéro de mois en lettres
+def n_mois_to_mois(n) :
+    l_mois={
+        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
+        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
+        }
+    return(l_mois[n])
 
 #permet d'obtenir les achats dans un mois,année donnés (rentrer mois et an en int)
 def achat_mois(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_achat']=pd.to_datetime(df['commande_date_achat']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_achat'].dt.month == mois]
     df=df[df['commande_date_achat'].dt.year == an]
@@ -49,61 +42,103 @@ def achat_mois(df_entree,mois,an):
 
 #permet d'obtenir les achats dans une année donnée (rentrer annne en int)
 def achat_an(df_entree, an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_achat']=pd.to_datetime(df['commande_date_achat']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_achat'].dt.year == an]
     return df
 
+
 #similaire à la ft achat_mois, mais prendra comme référence pour trier la colonne commande_date_soin
 def achat_mois_soin(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_soin']=pd.to_datetime(df['commande_date_soin']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_soin'].dt.month == mois]
     df=df[df['commande_date_soin'].dt.year == an]
     return df
 
 def achat_an_soin(df_entree, an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_soin']=pd.to_datetime(df['commande_date_soin']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_soin'].dt.year == an]
     return df
 
 
+#similaire à la ft achat_mois, mais prendra comme référence pour trier la colonne commande_date_perception
+def achat_mois_perception(df_entree,mois,an):
+    df=df_entree.copy()
+    df['commande_date_perception']=pd.to_datetime(df['commande_date_perception']) #on convertit la colonne en datetime pour pouvoir travailler dessus
+    df=df[df['commande_date_perception'].dt.month == mois]
+    df=df[df['commande_date_perception'].dt.year == an]
+    return df
+
+def achat_an_perception(df_entree, an):
+    df=df_entree.copy()
+    df['commande_date_perception']=pd.to_datetime(df['commande_date_perception']) #on convertit la colonne en datetime pour pouvoir travailler dessus
+    df=df[df['commande_date_perception'].dt.year == an]
+    return df
+
+
+
+# modèle de comment est calculé le CA
+def CA(df_entree):
+    df=df_entree.copy()
+    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
+    return df['chiffre_affaire']
+
+# modèle de comment est calculé le revenu net
+def revenu_net(df_entree):
+    df=df_entree.copy()
+    df['revenu_net']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission'] - df['commande_rsi']
+    return df['revenu_net']
+
+
+
+#donne le chiffre d'affaire par an de chaque intitulé
 def CA_atelier_an(df_entree,an): #on donne l'annee en int
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an) # on trie pour obtenir les dates d'achat d'une seule année
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite'] # on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['activite_nom','prix_x_qte']] # on affiche juste nom et CA pour clarté
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
+    df['chiffre_affaire']= CA(df)# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
+    df=df[['activite_nom','chiffre_affaire']] # on affiche juste nom et CA pour clarté
+    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite
+    df=df.reset_index()
     return df
 
+#donne le chiffre d'affaire par mois de chaque intitulé
 def CA_atelier_mois(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_mois(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['activite_nom','prix_x_qte']] #on affiche juste nom et CA pour clarté
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite)
+    df['chiffre_affaire']=CA(df)
+    df=df[['activite_nom','chiffre_affaire']] #on affiche juste nom et CA pour clarté
+    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite)
+    df=df.reset_index()
     return df
 
+
+#donne le chiffre d'affaire par an de chaque vendeur
 def CA_vendeur_an(df_entree,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['vendeur_nom','prix_x_qte']] #on affiche juste vendeur, nom et CA pour clarté
-    df=df.groupby(by=['vendeur_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
+    df['chiffre_affaire']=CA(df)
+    df=df[['vendeur_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
+    df=df.groupby(by=['vendeur_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite
+    df=df.reset_index()
     return df
 
+#donne le chiffre d'affaire par an de chaque intitulé en fonction du vendeur
 def CA_vendeur_atelier_an(df_entree,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['vendeur_nom','activite_nom','prix_x_qte']] #on affiche juste vendeur, nom et CA pour clarté
+    df['chiffre_affaire']= CA(df)
+    df=df[['vendeur_nom','activite_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
     df=df.groupby(by=['vendeur_nom','activite_nom']).sum().sort_values(by=['vendeur_nom','activite_nom']) # donne le chiffre d'affaire total par activite
     ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
+    df=df.reset_index()
     return df
 
+
+#donne le nombre d'atelier vendus par an
 def nbr_atelier_an(df_entree,an):
-    df=df_entree
+    df=df_entree.copy()
     df_nbr_atelier_an=achat_an(df,an)# on trie pour obtenir les dates d'achat d'une seule année
     df_nbr_atelier_an=df_nbr_atelier_an[['type_activite_id','activite_nom','commande_quantite']] #on affiche juste nom et CA pour clarté
     df_nbr_atelier_an=df_nbr_atelier_an.groupby(by=['activite_nom','type_activite_id']).sum().sort_values(by=['type_activite_id']) # donne le chiffre d'affaire total par activite
@@ -115,8 +150,10 @@ def nbr_atelier_an(df_entree,an):
     return df2
     # # print(df_nbr[df_nbr['activite_nom']=='Intervention Extérieure sur devis']) #permet de selectionner une activité en particulier, est-ce que je le mets dans une autre ft?
 
+
+#donne le nombre de personnes présentes dans chaque atelier par mois
 def nbr_personne_atelier_mois(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_mois_soin(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
     df=df[['commande_date_soin','activite_nom','commande_quantite']]
     df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
@@ -124,17 +161,83 @@ def nbr_personne_atelier_mois(df_entree,mois,an):
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
-def nbr_personne_atelier_an(df_entree,an):
-    df=df_entree
-    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df=df[['activite_nom','commande_quantite']]
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
-    df=df.rename(columns={"commande_quantite":"nbr_gens"})
+#est-ce utile étant donné que c'est identique à nbr_atelier_an?
+#donne le nombre de personnes présentes dans chaque atelier par an
+# def nbr_personne_atelier_an(df_entree,an):
+#     df=df_entree.copy()
+#     df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+#     df=df[['activite_nom','commande_quantite']]
+#     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+#     df=df.rename(columns={"commande_quantite":"nbr_gens"})
+#     return df
+
+
+# renvoie un tableau avec le CA par mois pour toute l'année
+def CA_annuel(df_entree,an):
+    df=df_entree.copy()
+    df=achat_an(df,an)
+    df['mois']=df['commande_date_achat'].dt.month
+    df['chiffre_affaire']=CA(df)
+    df=df[['mois','chiffre_affaire']]
+    df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
+    df['mois']=df['mois'].replace({
+        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
+        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
+        })
     return df
-    
+
+# renvoie un tableau avec le revenu net par mois pour toute l'année
+def revenu_net_annuel(df_entree,an):
+    df=df_entree.copy()
+    df=achat_an(df,an)
+    df['mois']=df['commande_date_achat'].dt.month
+    df['revenu_net']=revenu_net(df)
+    df=df[['mois','revenu_net']]
+    df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
+    df['mois']=df['mois'].replace({
+        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
+        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
+        })
+    return df
 
 
-#Main
+#renvoie un tableau avec le CA annuel pour chaque année
+def CA_par_ans(df_entree):
+    df=df_entree.copy()
+    df['commande_date_achat']=pd.to_datetime(df['commande_date_achat'])
+    df['annee']=df['commande_date_achat'].dt.year
+    df['chiffre_affaire']=CA(df)
+    df=df[['annee','chiffre_affaire']]
+    df=df.groupby(by=['annee']).sum().sort_values(by=['annee']).reset_index()
+    return df
+
+#renvoie un tableau avec le revenu net annuel pour chaque année
+def revenu_net_par_ans(df_entree):
+    df=df_entree.copy()
+    df['commande_date_achat']=pd.to_datetime(df['commande_date_achat'])
+    df['annee']=df['commande_date_achat'].dt.year
+    df['revenu_net']=revenu_net(df)
+    df=df[['annee','revenu_net']]
+    df=df.groupby(by=['annee']).sum().sort_values(by=['annee']).reset_index()
+    return df
+
+#renvoie le CA annuel par client
+def CA_par_client(df_entree, an):
+    df=df_entree
+    df=achat_an(df, an)
+    df["chiffre_affaire"]=CA(df)
+    df=df[['client_id','client_prenom','client_nom', 'chiffre_affaire']]
+    df=df.groupby(["client_id", "client_prenom", "client_nom"],as_index=False).sum().sort_values(by=['chiffre_affaire'], ascending=False)
+    df=df[["client_prenom", "client_nom",'chiffre_affaire']]
+    return df
+    # df = df.reset_index(level="client_id", drop=True) # le 3-tuple ["client_id", "client_prenom", "client_nom"] forme l'index, cette ligne permet d'en supprimer une partie
+
+
+
+
+
+
+### MAIN ###
 
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
@@ -151,51 +254,74 @@ df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 
 
 
-# jointure des 4 tables type_activite ,commande, activite et commande_activite (par la gauche pour garder affiché tous les noms d'activite)
+# jointure des 4 tables type_activite ,commande, activite, commande_activite et vendeur(par la gauche pour garder affiché tous les noms d'activite)
 df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
 df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="left")
 df_activite=df_activite.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
-
-#jointure avec table vendeur
-df_activite_vendeur=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# on transforme df_activite pour incorporer vendeur_nom
+df_activite=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# on transforme df_activite pour incorporer vendeur_nom
 
 # jointure de table avec comme table principale commande_activite
 df_commande=df_table_commande_activite.join(df_table_activite.set_index('activite_id'),on=('activite_id'), how="left")
 df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
 df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
+df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
+df_commande=df_commande.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
 
-# ### CHIFFRE D'AFFAIRE ###
-# ##  CA PAR ATELIER / AN
-CA_atelier_an(df_activite,2023) #annee à adapter
+#on transforme les prix des lignes Remboursement en négatif
+df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite_prix']=df_commande[df_commande['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
+#loc => 1er argument: ligne (ici filtre) 2eme argument:colonne
+
+
+
+
+### CHIFFRE D'AFFAIRE ###
+##  CA PAR ATELIER / AN
+# CA_atelier_an(df_activite,2023) #annee à adapter
 print(CA_atelier_an(df_activite,2023))
 
-# ## CA PAR ATELIER / MOIS
+## CA PAR ATELIER / MOIS
 CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
 for i in range(1,13):
     print(CA_atelier_mois(df_activite,i,2023))
 
 
-# ## CA / VENDEUR
-CA_vendeur_an(df_activite_vendeur,2023) #annee à adapter
-print(CA_vendeur_an(df_activite_vendeur,2023))
+## CA / VENDEUR
+CA_vendeur_an(df_activite,2023) #annee à adapter
+print(CA_vendeur_an(df_activite,2023))
 
-# ## CA / (VENDEUR, ATELIER)
-CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
-print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
+## CA / (VENDEUR, ATELIER)
+CA_vendeur_atelier_an(df_activite,2023) #annee à adapter
+print(CA_vendeur_atelier_an(df_activite,2023))
+
+## CA / CLIENT / AN
+CA_par_client(df_commande, 2023)
+print(CA_par_client(df_commande, 2023))
+
+## CA / AN (TABLEAU CHAQUE MOIS)
+print(CA_annuel(df_commande,2023))
+
+## REVENU NET / AN (TABLEAU CHAQUE MOIS)
+print(revenu_net_annuel(df_commande,2023))
+
+## CA ANNUEL / ANS
+print(CA_par_ans(df_commande))
+
+## REVENU NET ANNUEL / ANS
+print(revenu_net_par_ans(df_commande))
+
+
 
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
-# nbr_atelier_an(df_activite,2023) #annee à adapter
-print(nbr_personne_atelier_an(df_activite,2023))
+nbr_atelier_an(df_activite,2023) #annee à adapter
+print(nbr_atelier_an(df_activite,2023))
 
 
-# ### NOMBRE PERSONNES ####
-# ## NBR PERSONNE / ATELIER / MOIS
+### NOMBRE PERSONNES ####
+## NBR PERSONNE / ATELIER / MOIS
 nbr_personne_atelier_mois(df_commande,1,2023)
 for i in range(1,13):
     print(nbr_personne_atelier_mois(df_commande,i,2023))
 
-# # ## PERSONNE / ATELIER / AN
-nbr_personne_atelier_an(df_commande,2023)
-print(nbr_personne_atelier_an(df_commande,2023))
+
