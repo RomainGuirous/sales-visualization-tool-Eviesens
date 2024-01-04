@@ -68,7 +68,22 @@ def achat_an_soin(df_entree, an):
     df=df[df['commande_date_soin'].dt.year == an]
     return df
 
+#similaire à la ft achat_mois, mais prendra comme référence pour trier la colonne commande_date_perception
+def achat_mois_perception(df_entree,mois,an):
+    df=df_entree
+    df['commande_date_perception']=pd.to_datetime(df['commande_date_perception']) #on convertit la colonne en datetime pour pouvoir travailler dessus
+    df=df[df['commande_date_perception'].dt.month == mois]
+    df=df[df['commande_date_perception'].dt.year == an]
+    return df
 
+def achat_an_perception(df_entree, an):
+    df=df_entree
+    df['commande_date_perception']=pd.to_datetime(df['commande_date_perception']) #on convertit la colonne en datetime pour pouvoir travailler dessus
+    df=df[df['commande_date_perception'].dt.year == an]
+    return df
+
+
+#donne le chiffre d'affaire par an de chaque intitulé
 def CA_atelier_an(df_entree,an): #on donne l'annee en int
     df=df_entree
     df=achat_an(df,an) # on trie pour obtenir les dates d'achat d'une seule année
@@ -77,6 +92,7 @@ def CA_atelier_an(df_entree,an): #on donne l'annee en int
     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
     return df
 
+#donne le chiffre d'affaire par mois de chaque intitulé
 def CA_atelier_mois(df_entree,mois,an):
     df=df_entree
     df=achat_mois(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
@@ -85,6 +101,7 @@ def CA_atelier_mois(df_entree,mois,an):
     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite)
     return df
 
+#donne le chiffre d'affaire par an de chaque vendeur
 def CA_vendeur_an(df_entree,an):
     df=df_entree
     df=achat_an(df,an)
@@ -93,6 +110,7 @@ def CA_vendeur_an(df_entree,an):
     df=df.groupby(by=['vendeur_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
     return df
 
+#donne le chiffre d'affaire par an de chaque intitulé en fonction du vendeur
 def CA_vendeur_atelier_an(df_entree,an):
     df=df_entree
     df=achat_an(df,an)
@@ -102,6 +120,7 @@ def CA_vendeur_atelier_an(df_entree,an):
     ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
     return df
 
+#donne le nombre d'atelier vendus par an
 def nbr_atelier_an(df_entree,an):
     df=df_entree
     df_nbr_atelier_an=achat_an(df,an)# on trie pour obtenir les dates d'achat d'une seule année
@@ -115,6 +134,7 @@ def nbr_atelier_an(df_entree,an):
     return df2
     # # print(df_nbr[df_nbr['activite_nom']=='Intervention Extérieure sur devis']) #permet de selectionner une activité en particulier, est-ce que je le mets dans une autre ft?
 
+#donne le nombre de personnes présentes dans chaque atelier par mois
 def nbr_personne_atelier_mois(df_entree,mois,an):
     df=df_entree
     df=achat_mois_soin(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
@@ -124,14 +144,25 @@ def nbr_personne_atelier_mois(df_entree,mois,an):
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
-def nbr_personne_atelier_an(df_entree,an):
+#est-ce utile étant donné que c'est identique à nbr_atelier_an?
+#donne le nombre de personnes présentes dans chaque atelier par an
+# def nbr_personne_atelier_an(df_entree,an):
+#     df=df_entree
+#     df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+#     df=df[['activite_nom','commande_quantite']]
+#     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+#     df=df.rename(columns={"commande_quantite":"nbr_gens"})
+#     return df
+
+
+def CA_brut_an(df_entree,an):
     df=df_entree
-    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df=df[['activite_nom','commande_quantite']]
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
-    df=df.rename(columns={"commande_quantite":"nbr_gens"})
-    return df
-    
+    df=achat_an(an)
+    df['mois']=df['commande_date_achat'].dt.month
+    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] - df['commande_deplacement'] - df['reduction']
+    df=df[['mois','chiffre_affaire']]
+    df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
+
 
 
 #Main
@@ -164,38 +195,38 @@ df_commande=df_table_commande_activite.join(df_table_activite.set_index('activit
 df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
 df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
 
-# ### CHIFFRE D'AFFAIRE ###
-# ##  CA PAR ATELIER / AN
-# CA_atelier_an(df_activite,2023) #annee à adapter
-# print(CA_atelier_an(df_activite,2023))
+### CHIFFRE D'AFFAIRE ###
+##  CA PAR ATELIER / AN
+CA_atelier_an(df_activite,2023) #annee à adapter
+print(CA_atelier_an(df_activite,2023))
 
-# ## CA PAR ATELIER / MOIS
-# CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
-# for i in range(1,13):
-#     print(CA_atelier_mois(df_activite,i,2023))
-
-
-# ## CA / VENDEUR
-# CA_vendeur_an(df_activite_vendeur,2023) #annee à adapter
-# print(CA_vendeur_an(df_activite_vendeur,2023))
-
-# ## CA / (VENDEUR, ATELIER)
-# CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
-# print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
+## CA PAR ATELIER / MOIS
+CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
+for i in range(1,13):
+    print(CA_atelier_mois(df_activite,i,2023))
 
 
-### NOMBRE ACHAT ###
-## NA ATELIER / AN
-# nbr_atelier_an(df_activite,2023) #annee à adapter
-# print(nbr_atelier_an(df_activite,2023))
+## CA / VENDEUR
+CA_vendeur_an(df_activite_vendeur,2023) #annee à adapter
+print(CA_vendeur_an(df_activite_vendeur,2023))
+
+## CA / (VENDEUR, ATELIER)
+CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
+print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
 
 
-# ### NOMBRE PERSONNES ####
-# ## NBR PERSONNE / ATELIER / MOIS
-# nbr_personne_atelier_mois(df_commande,1,2023)
-# for i in range(1,13):
-#     print(nbr_personne_atelier_mois(df_commande,i,2023))
+## NOMBRE ACHAT ###
+# NA ATELIER / AN
+nbr_atelier_an(df_activite,2023) #annee à adapter
+print(nbr_atelier_an(df_activite,2023))
 
-# # ## PERSONNE / ATELIER / AN
-# nbr_personne_atelier_an(df_commande,2023)
-# print(nbr_personne_atelier_an(df_commande,2023))
+
+### NOMBRE PERSONNES ####
+## NBR PERSONNE / ATELIER / MOIS
+nbr_personne_atelier_mois(df_commande,1,2023)
+for i in range(1,13):
+    print(nbr_personne_atelier_mois(df_commande,i,2023))
+
+# ## PERSONNE / ATELIER / AN
+nbr_personne_atelier_an(df_commande,2023)
+print(nbr_personne_atelier_an(df_commande,2023))
