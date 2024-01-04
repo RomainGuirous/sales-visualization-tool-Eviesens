@@ -187,7 +187,7 @@ df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
 # nbr_atelier_an(df_activite,2023) #annee à adapter
-print(nbr_atelier_an(df_activite,2023))
+print(nbr_personne_atelier_an(df_activite,2023))
 
 
 # ### NOMBRE PERSONNES ####
