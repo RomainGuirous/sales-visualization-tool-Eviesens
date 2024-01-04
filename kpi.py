@@ -166,22 +166,22 @@ df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'
 
 # ### CHIFFRE D'AFFAIRE ###
 # ##  CA PAR ATELIER / AN
-# CA_atelier_an(df_activite,2023) #annee à adapter
-# print(CA_atelier_an(df_activite,2023))
+CA_atelier_an(df_activite,2023) #annee à adapter
+print(CA_atelier_an(df_activite,2023))
 
 # ## CA PAR ATELIER / MOIS
-# CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
-# for i in range(1,13):
-#     print(CA_atelier_mois(df_activite,i,2023))
+CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
+for i in range(1,13):
+    print(CA_atelier_mois(df_activite,i,2023))
 
 
 # ## CA / VENDEUR
-# CA_vendeur_an(df_activite_vendeur,2023) #annee à adapter
-# print(CA_vendeur_an(df_activite_vendeur,2023))
+CA_vendeur_an(df_activite_vendeur,2023) #annee à adapter
+print(CA_vendeur_an(df_activite_vendeur,2023))
 
 # ## CA / (VENDEUR, ATELIER)
-# CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
-# print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
+CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
+print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
 
 
 ### NOMBRE ACHAT ###
@@ -192,10 +192,10 @@ print(nbr_personne_atelier_an(df_activite,2023))
 
 # ### NOMBRE PERSONNES ####
 # ## NBR PERSONNE / ATELIER / MOIS
-# nbr_personne_atelier_mois(df_commande,1,2023)
-# for i in range(1,13):
-#     print(nbr_personne_atelier_mois(df_commande,i,2023))
+nbr_personne_atelier_mois(df_commande,1,2023)
+for i in range(1,13):
+    print(nbr_personne_atelier_mois(df_commande,i,2023))
 
 # # ## PERSONNE / ATELIER / AN
-# nbr_personne_atelier_an(df_commande,2023)
-# print(nbr_personne_atelier_an(df_commande,2023))
+nbr_personne_atelier_an(df_commande,2023)
+print(nbr_personne_atelier_an(df_commande,2023))

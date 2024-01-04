@@ -8,7 +8,8 @@ pd.set_option('display.max_rows', 500)
 
 # commande
 def select_commande(df) :
-    df_commande = df.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
+    df_commande=df.copy()
+    df_commande = df_commande.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
     df_commande = df_commande[df_commande['Structure'].notna()]
     df_commande = df_commande[df_commande['Type'].notna()]
     df_commande = df_commande[df_commande['Vendeur'].notna()]
@@ -86,7 +87,7 @@ def get_vendeur_intervention_id(connection) :
 # remplace les colonnes client_nom et client_prenom par client_id
 def get_client_id(df_commande, connection) :
     pd.options.mode.chained_assignment = None
-    df_res=df_commande
+    df_res=df_commande.copy()
     df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', connection)
     df_res["client_id"]=np.nan
     def same_line(i, j, dfcom, dfdb) :
@@ -107,7 +108,7 @@ def get_client_id(df_commande, connection) :
 
 # ajoute l'id de la commande a partir de l'id client et de la date d'achat de la commande
 def get_commande_id(df_commande, connection) :
-    df_res=df_commande
+    df_res=df_commande.copy()
     df_from_db = pd.read_sql_query('SELECT commande_id, commande_date_achat, client_id, moyen_paiement_id, type_transaction_id, type_structure_id FROM commande', connection)
     df_res["commande_id"]=np.nan
     def same_line(i, j, dfcom, dfdb) :
@@ -127,7 +128,7 @@ def get_commande_id(df_commande, connection) :
 
 # remplace le nom du vendeur par son id associe
 def get_vendeur_id(df_commande, connection) :
-    df_res=df_commande
+    df_res=df_commande.copy()
     df_from_db = pd.read_sql_query('SELECT vendeur_id, vendeur_nom FROM vendeur', connection)
     df_res["vendeur_id"]=np.nan
     for i in df_res.index :
@@ -141,7 +142,7 @@ def get_vendeur_id(df_commande, connection) :
 # remplace les colonnes type_activite_nom et activite_nom par l'id type_activite associe
 def get_type_activite_id(df_commande, connection) :
     pd.options.mode.chained_assignment = None
-    df_res=df_commande
+    df_res=df_commande.copy()
     df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection)
     df_res["type_activite_id"]=np.nan
     def same_line(i, j, dfcom, dfdb) :
@@ -162,7 +163,8 @@ def get_type_activite_id(df_commande, connection) :
 
 # cree une intervention a partir d'une commande et de l'id general du vendeur (Eviesens) et de l'id du type correspondant (intervention exterieure, Prestation)
 def create_intervention(i, df_commande, id_vendeur_intervention, id_type_intervention, conn) :
-    line_to_add=df_commande.loc[i, ["activite_prix", "commande_date_achat"]]
+    line_to_add=df_commande.copy()
+    line_to_add=line_to_add.loc[i, ["activite_prix", "commande_date_achat"]]
     mois=line_to_add["commande_date_achat"][5:7]
     annee=line_to_add["commande_date_achat"][0:4]
     line_to_add["activite_mois"]=annee+"-"+mois+"-"+"01"
@@ -201,7 +203,7 @@ def get_intervention_id (i, df_commande, id_vendeur_intervention, id_type_interv
 # cree une nouvelle intervention exterieure si il s'agit d'un devis
 def get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, connection) :
     pd.options.mode.chained_assignment = None
-    df_res=df_commande
+    df_res=df_commande.copy()
     df_from_db = pd.read_sql_query('SELECT activite_id, activite_mois, type_activite_id, vendeur_id FROM activite', connection)
     df_res["activite_id"]=np.nan
 
@@ -235,7 +237,7 @@ def get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, 
     return df_res
 
 def add_new_command_activite (df_to_add, connection) :
-    df_res = df_to_add # liste des commandes a rajouter en cours
+    df_res = df_to_add.copy() # liste des commandes a rajouter en cours
     for i in df_res.index :
         command_activite_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
         command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd

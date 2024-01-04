@@ -49,21 +49,6 @@ def achat_an(df_entree, an):
     df=df[df['commande_date_achat'].dt.year == an]
     return df
 
-#similaire à la ft achat_mois, mais prendra comme référence pour trier la colonne commande_date_soin
-def achat_mois_soin(df_entree,mois,an):
-    df=df_entree
-    df['commande_date_soin']=pd.to_datetime(df['commande_date_soin']) #on convertit la colonne en datetime pour pouvoir travailler dessus
-    df=df[df['commande_date_soin'].dt.month == mois]
-    df=df[df['commande_date_soin'].dt.year == an]
-    return df
-
-def achat_an_soin(df_entree, an):
-    df=df_entree
-    df['commande_date_soin']=pd.to_datetime(df['commande_date_soin']) #on convertit la colonne en datetime pour pouvoir travailler dessus
-    df=df[df['commande_date_soin'].dt.year == an]
-    return df
-
-
 def CA_atelier_an(df_entree,an): #on donne l'annee en int
     df=df_entree
     df=achat_an(df,an) # on trie pour obtenir les dates d'achat d'une seule année
@@ -121,21 +106,19 @@ def nbr_commande_atelier_mois(df_entree,mois,an):
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
-def nbr_personne_atelier_mois(df_entree,mois,an):
-    df=df_entree
-    df=achat_mois_soin(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df=df[['commande_date_soin','activite_nom','commande_quantite']]
-    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
-    df=df[['activite_nom','commande_quantite']]
-    df=df.rename(columns={"commande_quantite":"nbr_gens"})
-    return df
+def CA(df_entree):
+    df=df_entree.copy()
+    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
+    return df['chiffre_affaire']
 
-def nbr_personne_atelier_an(df_entree,an):
+def CA_par_client(df_entree, an):
     df=df_entree
-    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df=df[['activite_nom','commande_quantite']]
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
-    df=df.rename(columns={"commande_quantite":"nbr_gens"})
+    df=achat_an(df, an)
+    df["chiffre_affaire"]=CA(df)
+    df=df[['client_id','client_prenom','client_nom', 'chiffre_affaire']]
+    df=df.groupby(["client_id", "client_prenom", "client_nom"]).sum().sort_values(by=['chiffre_affaire'], ascending=False)
+    print(df["client_nom"])
+    # df = df.reset_index(level="client_id", drop=True)
     return df
 
 #Main
@@ -158,9 +141,11 @@ df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 df_commande=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
 df_commande=df_commande.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="left")
 df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
-df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# ontransforme df_commande pour incorporer vendeur_nom 
+df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# ontransforme df_commande pour incorporer vendeur_nom
+df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'),how='inner')
 
 
+print(CA_par_client(df_commande, 2023))
 ### CHIFFRE D'AFFAIRE ###
 ##  CA PAR ATELIER / AN
 def show_atelier_an(df, annee) :
@@ -246,10 +231,11 @@ def show_nbr_atelier_an(df, annee) :
 
 # show_nbr_atelier_an(df_commande, 2023)
 
+
 ### NOMBRE ACHAT ###
 ## NA ATELIER / MOIS
-def show_nbr_atelier_an(df, annee) :
-    df_nbr_atelier_an = nbr_commande_atelier_an(df, annee)
+def show_nbr_atelier_mois(df, mois, annee) :
+    df_nbr_atelier_an = nbr_commande_atelier_mois(df, mois, annee)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
     x=df_nbr_atelier_an["nbr_gens"]
@@ -258,7 +244,10 @@ def show_nbr_atelier_an(df, annee) :
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.27)
     ax.set_title(f"nombre d'ateliers commandes ({annee})")
+    de_ou_d = "d'" if mois in (4, 8, 10) else "de "
+    ax.set_title(f"nombre d'ateliers commandes au mois {de_ou_d}{ n_mois_to_mois(mois) } {annee}")
 
-# show_nbr_atelier_an(df_commande, 2023)
-print(nbr_commande_atelier_mois(df_commande, 1, 2023))
+# show_nbr_atelier_mois(df_commande, 8, 2023)
+
+
 plt.show()

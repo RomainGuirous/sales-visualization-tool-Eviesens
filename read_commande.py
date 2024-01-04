@@ -7,7 +7,8 @@ pd.set_option('display.max_rows', 500)
 
 # commande
 def select_commande(df) :
-    df_commande = df.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
+    df_commande=df.copy()
+    df_commande = df_commande.iloc[:49,:21] # selectionne uniquement les lignes jusque la ligne 50 du csv et 21 premieres colonnes
     df_commande = df_commande[df_commande['Structure'].notna()]
     df_commande = df_commande[df_commande['Type'].notna()]
     df_commande = df_commande[df_commande['Vendeur'].notna()]
@@ -41,7 +42,7 @@ def database_to_dict(table_name, connection) :
 
 #a partir d'un dictionnaire de noms et d'une serie, renvoie cette serie sans les noms existants deja dans le dictionnaire
 def drop_existing_name(dico, df) :
-    res=df
+    res=df.copy()
     for i in res.index:
         if res[i] in dico :
             res=res.drop(index=i)
@@ -68,7 +69,7 @@ def equal_or_both_null(s1, s2) :
     return False
 
 def add_new_clients(df_to_add, connection) :
-    df_res=df_to_add
+    df_res=df_to_add.copy()
     df_from_db = pd.read_sql_query('SELECT client_id,client_nom,client_prenom FROM client', connection)
     df_res=df_res[["client_nom","client_prenom"]]
     add_client=True #un client est par defaut inconnu et doit etre ajoute a la bdd
@@ -87,7 +88,7 @@ def add_new_clients(df_to_add, connection) :
 
 def get_clients_id(df_to_get, df_from_db) :
     pd.options.mode.chained_assignment = None
-    df_res=df_to_get
+    df_res=df_to_get.copy()
     df_res["client_id"]=np.nan # initialise tous les id a null
     for i in df_res.index :
         for j in df_from_db.index :
@@ -98,7 +99,7 @@ def get_clients_id(df_to_get, df_from_db) :
 
 
 def add_new_commands(df_to_add, connection) :
-    df_res = df_to_add # liste des commandes a rajouter en cours
+    df_res = df_to_add.copy() # liste des commandes a rajouter en cours
     df_from_db = pd.read_sql_query('SELECT commande_date_achat, client_id, moyen_paiement_id, type_transaction_id, type_structure_id FROM commande', connection)
     add_command=True # une commande est ajoutee par defaut
 

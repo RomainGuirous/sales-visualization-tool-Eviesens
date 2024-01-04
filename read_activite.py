@@ -9,7 +9,8 @@ pd.set_option('display.max_rows', 500)
 # activite
 #a partir du fichier csv, selectionne les colonnes et les lignes correspondant au tableau activite
 def select_activite(df) :
-    df_activite = df.iloc[:,24:28] # selectionne toutes les lignes des colonnes Y a AB d'excel (colonnes 25 a 28 du csv)
+    df_activite=df.copy()
+    df_activite = df_activite.iloc[:,24:28] # selectionne toutes les lignes des colonnes Y a AB d'excel (colonnes 25 a 28 du csv)
     df_activite=df_activite.dropna() #supprime Nan
     df_activite=df_activite.astype({'Prix': 'string'})
     df_activite["Prix"]=df_activite["Prix"].replace(regex='[^,.0-9]', value=np.nan) # remplace tout ce qui n'est pas un chiffre, un . ou une , par Nan
@@ -45,7 +46,7 @@ def str_to_month_year(s) :
 
 #a partir d'un dictionnaire de noms et d'une serie, renvoie cette serie sans les noms existants deja dans le dictionnaire
 def drop_existing_name(dico, df) :
-    res=df
+    res=df.copy()
     for i in res.index:
         if res[i] in dico :
             res=res.drop(index=i)
@@ -71,7 +72,7 @@ def is_valid_filename(filename) :
     return False
 
 def add_type_act(df_to_add, connection) :
-    df_res=df_to_add
+    df_res=df_to_add.copy()
     df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection)
     df_res=df_res[["type_activite_nom","activite_nom"]]
     add_type_act=True #un client est par defaut inconnu et doit etre ajoute a la bdd
@@ -88,7 +89,7 @@ def add_type_act(df_to_add, connection) :
 
 def get_type_act_id(df_to_get, connection) :
     pd.options.mode.chained_assignment = None
-    df_res=df_to_get
+    df_res=df_to_get.copy()
     df_from_db = pd.read_sql_query('SELECT type_activite_id, type_activite_nom, activite_nom FROM type_activite', connection) # recupere la liste des clients de la bdd
     df_res["type_activite_id"]=np.nan # initialise tous les id a null
     for i in df_res.index :
@@ -99,7 +100,7 @@ def get_type_act_id(df_to_get, connection) :
     return df_res
 
 def add_new_activite(df_to_add, connection) :
-    df_res = df_to_add # liste des activites a rajouter en cours
+    df_res = df_to_add.copy() # liste des activites a rajouter en cours
     df_from_db = pd.read_sql_query('SELECT activite_mois, type_activite_id, vendeur_id FROM activite', connection)
     add_activite=True # une activite est ajoutee par defaut
 
