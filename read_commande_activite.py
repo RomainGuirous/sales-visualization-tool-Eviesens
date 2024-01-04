@@ -18,21 +18,35 @@ def select_commande(df) :
     df_commande = df_commande[df_commande['Déplacement'].notna()]
     df_commande = df_commande[df_commande['Quantité'].notna()]
     df_commande = df_commande[df_commande['Reduction'].notna()]
+    df_commande = df_commande[df_commande['Commission'].notna()]
+    df_commande = df_commande[df_commande['RSI'].notna()]
     df_commande = df_commande[df_commande["Date d'achat"].notna()]
 
-    df_commande=df_commande.astype({'Tarif': 'string'})
-    df_commande["Tarif"]=df_commande["Tarif"].replace(regex='[^,.0-9]', value=np.nan) # remplace tout ce qui n'est pas un chiffre, un . ou une , par Nan
+    df_commande=df_commande.astype({'Déplacement': 'string', 'Tarif': 'string', 'Reduction': 'string', 'Commission': 'string', 'RSI': 'string'})
+    df_commande["Déplacement"]=df_commande["Déplacement"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Déplacement"]=df_commande["Déplacement"].str.replace(',', '.', regex=True) # remplace tout ce qui n'est pas un chiffre, un . ou une , par Nan
+
+    df_commande["Tarif"]=df_commande["Tarif"].replace(regex='[^,.0-9]', value=np.nan)
     df_commande["Tarif"]=df_commande["Tarif"].str.replace(',', '.', regex=True)
 
+    df_commande["Reduction"]=df_commande["Reduction"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Reduction"]=df_commande["Reduction"].str.replace(',', '.', regex=True)
+    
+    df_commande["Commission"]=df_commande["Commission"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Commission"]=df_commande["Commission"].str.replace(',', '.', regex=True)
+
+    df_commande["RSI"]=df_commande["RSI"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["RSI"]=df_commande["RSI"].str.replace(',', '.', regex=True)
     #on selectionne les colonnes utiles pour nous par leur nom dans le DF    df_commande = df_commande.rename(columns={'Structure': 'type_structure_nom', 'Transaction': 'type_transaction_nom', 'Moyen de paiement':'moyen_paiement_nom', "Nom":'client_nom', "Prénom":'client_prenom',"Date d'achat":'commande_date_achat'})
     df_commande = df_commande[['Date soin', 'Nom' ,'Prénom', 'Type', 'Vendeur', 'Intitulé','Déplacement', 'Quantité', 'Tarif', 
-                               'Reduction', "Date d'achat", 'Date Encaissement ', 'Date perception', 'Date remboursement']]
+                               'Reduction', 'Commission', 'RSI', "Date d'achat", 'Date Encaissement ', 'Date perception', 'Date remboursement']]
     
     #on change nom col pour correspondre au nom dans les tables type_structure, type_transaction, moyen_paiement et commande (pour commande_date_achat et client_id)
     df_commande = df_commande.rename(columns={'Date soin': 'commande_date_soin', 'Nom': 'client_nom',
                                               'Prénom': 'client_prenom', 'Type': 'type_activite_nom', 'Vendeur': 'vendeur_nom',
                                               'Intitulé': 'activite_nom', 'Déplacement': 'commande_deplacement',
-                                              'Quantité': 'commande_quantite', 'Reduction': 'commande_reduction', 'Tarif' : "activite_prix",
+                                              'Quantité': 'commande_quantite', 'Reduction': 'commande_reduction', 'Commission' : 'commande_commission',
+                                              'RSI' : 'commande_rsi', 'Tarif' : "activite_prix",
                                               "Date d'achat": 'commande_date_achat', 'Date Encaissement ': 'commande_date_encaissement',
                                               'Date perception': 'commande_date_perception', 'Date remboursement': 'commande_date_remboursement'})
     return df_commande

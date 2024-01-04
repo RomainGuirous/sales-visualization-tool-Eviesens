@@ -215,10 +215,10 @@ CA_vendeur_atelier_an(df_activite_vendeur,2023) #annee à adapter
 print(CA_vendeur_atelier_an(df_activite_vendeur,2023))
 
 
-## NOMBRE ACHAT ###
-# NA ATELIER / AN
-nbr_atelier_an(df_activite,2023) #annee à adapter
-print(nbr_atelier_an(df_activite,2023))
+### NOMBRE ACHAT ###
+## NA ATELIER / AN
+# nbr_atelier_an(df_activite,2023) #annee à adapter
+print(nbr_personne_atelier_an(df_activite,2023))
 
 
 ### NOMBRE PERSONNES ####
