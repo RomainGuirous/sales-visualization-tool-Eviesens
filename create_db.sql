@@ -74,6 +74,8 @@ CREATE TABLE commande_activite(
    commande_quantite INT NOT NULL,
    commande_deplacement DECIMAL(15,2)   NOT NULL,
    commande_reduction DECIMAL(15,2)   NOT NULL,
+   commande_commission DECIMAL(15,2)  ,
+   commande_rsi DECIMAL(15,2)  ,
    commande_date_encaissement DATE,
    commande_date_perception DATE,
    commande_date_remboursement DATE,

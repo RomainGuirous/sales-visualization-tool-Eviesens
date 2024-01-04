@@ -97,7 +97,7 @@ def CA_vendeur_atelier_an(df_entree,an):
     ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
     return df
 
-def nbr_atelier_an(df_entree,an):
+def nbr_commande_atelier_an(df_entree,an):
     df=df_entree
     df_nbr_atelier_an=achat_an(df,an)# on trie pour obtenir les dates d'achat d'une seule année
     df_nbr_atelier_an=df_nbr_atelier_an[['type_activite_id','activite_nom','commande_quantite']] #on affiche juste nom et CA pour clarté
@@ -105,8 +105,21 @@ def nbr_atelier_an(df_entree,an):
     df2=df_table_type_activite.merge(df_nbr_atelier_an,on=('type_activite_id'), how="left")
     df2=df2[['activite_nom','commande_quantite']].sort_values(by=['commande_quantite'],ascending=False)
     df2=df2.fillna(0)
+    df2["commande_quantite"]=df2["commande_quantite"].astype("int32")
+    df2=df2.rename(columns={"commande_quantite":"nbr_gens"})
     return df2
     # # print(df_nbr[df_nbr['activite_nom']=='Intervention Extérieure sur devis']) #permet de selectionner une activité en particulier, est-ce que je le mets dans une autre ft?
+
+def nbr_commande_atelier_mois(df_entree,mois,an):
+    df=df_entree
+    df=achat_mois(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+    df=df[['commande_date_soin','activite_nom','commande_quantite']]
+    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+    df=df[['activite_nom','commande_quantite']]
+    df=df.fillna(0)
+    df["commande_quantite"]=df["commande_quantite"].astype("int32")
+    df=df.rename(columns={"commande_quantite":"nbr_gens"})
+    return df
 
 def nbr_personne_atelier_mois(df_entree,mois,an):
     df=df_entree
@@ -126,7 +139,6 @@ def nbr_personne_atelier_an(df_entree,an):
     return df
 
 #Main
-
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
 #le dataframe de chaque table, extrait de la base de donnee
@@ -222,26 +234,31 @@ def show_vendeur_atelier_an(df, annee) :
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
 def show_nbr_atelier_an(df, annee) :
-    df_nbr_atelier_an = nbr_atelier_an(df, annee)
+    df_nbr_atelier_an = nbr_commande_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
-    x=df_nbr_atelier_an["commande_quantite"]
+    x=df_nbr_atelier_an["nbr_gens"]
     bars=ax.barh(y, x)
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.27)
-    ax.set_title(f"quantite commandee annuelle ({annee}) par atelier")
+    ax.set_title(f"nombre d'ateliers commandes ({annee})")
 
 # show_nbr_atelier_an(df_commande, 2023)
 
+### NOMBRE ACHAT ###
+## NA ATELIER / MOIS
+def show_nbr_atelier_an(df, annee) :
+    df_nbr_atelier_an = nbr_commande_atelier_an(df, annee)
+    fig, ax = plt.subplots()
+    y=df_nbr_atelier_an["activite_nom"]
+    x=df_nbr_atelier_an["nbr_gens"]
+    bars=ax.barh(y, x)
 
-# ### NOMBRE PERSONNES ####
-# ## NBR PERSONNE / ATELIER / MOIS
-nbr_personne_atelier_mois(df_commande,1,2023)
-# for i in range(1,13):
-#     print(nbr_personne_atelier_mois(df_commande,i,2023))
+    ax.bar_label(bars)
+    plt.gcf().subplots_adjust(left=.27)
+    ax.set_title(f"nombre d'ateliers commandes ({annee})")
 
-# # ## PERSONNE / ATELIER / AN
-# nbr_personne_atelier_an(df_commande,2023)
-# print(nbr_personne_atelier_an(df_commande,2023))
+# show_nbr_atelier_an(df_commande, 2023)
+print(nbr_commande_atelier_mois(df_commande, 1, 2023))
 plt.show()
