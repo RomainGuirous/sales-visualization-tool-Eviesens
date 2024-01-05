@@ -25,12 +25,10 @@ pd.options.mode.chained_assignment = None
 '''                
 
 #transforme les numéro de mois en lettres
-def n_mois_to_mois(n) :
-    l_mois={
-        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
-        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
-        }
-    return(l_mois[n])
+l_mois={
+    1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
+    7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
+    }
 
 #permet d'obtenir les achats dans un mois,année donnés (rentrer mois et an en int)
 def achat_mois(df_entree,mois,an):
@@ -152,12 +150,14 @@ def nbr_atelier_an(df_entree,an):
 
 
 #donne le nombre de personnes présentes dans chaque atelier par mois
-def nbr_personne_atelier_mois(df_entree,mois,an):
+def moy_personne_atelier_an(df_entree,an):
     df=df_entree.copy()
-    df=achat_mois_soin(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
     df=df[['commande_date_soin','activite_nom','commande_quantite']]
-    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['activite_nom'], ascending=False).reset_index()
     df=df[['activite_nom','commande_quantite']]
+    df=df.groupby(by=['activite_nom']).mean().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+    df=df.round(2)
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
@@ -180,10 +180,7 @@ def CA_annuel(df_entree,an):
     df['chiffre_affaire']=CA(df)
     df=df[['mois','chiffre_affaire']]
     df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
-    df['mois']=df['mois'].replace({
-        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
-        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
-        })
+    df['mois']=df['mois'].replace(l_mois)
     return df
 
 # renvoie un tableau avec le revenu net par mois pour toute l'année
@@ -194,10 +191,7 @@ def revenu_net_annuel(df_entree,an):
     df['revenu_net']=revenu_net(df)
     df=df[['mois','revenu_net']]
     df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
-    df['mois']=df['mois'].replace({
-        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
-        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
-        })
+    df['mois']=df['mois'].replace(l_mois)
     return df
 
 
@@ -253,7 +247,6 @@ df_table_activite= pd.read_sql_query('SELECT * FROM activite',conn)
 df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 
 
-
 # jointure des 4 tables type_activite ,commande, activite, commande_activite et vendeur(par la gauche pour garder affiché tous les noms d'activite)
 df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
 df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="left")
@@ -267,6 +260,7 @@ df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'
 df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
 df_commande=df_commande.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
 
+
 #on transforme les prix des lignes Remboursement en négatif
 df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite_prix']=df_commande[df_commande['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
 #loc => 1er argument: ligne (ici filtre) 2eme argument:colonne
@@ -277,51 +271,51 @@ df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite
 ### CHIFFRE D'AFFAIRE ###
 ##  CA PAR ATELIER / AN
 # CA_atelier_an(df_activite,2023) #annee à adapter
-print(CA_atelier_an(df_activite,2023))
+# print(CA_atelier_an(df_activite,2023))
 
-## CA PAR ATELIER / MOIS
-CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
-for i in range(1,13):
-    print(CA_atelier_mois(df_activite,i,2023))
-
-
-## CA / VENDEUR
-CA_vendeur_an(df_activite,2023) #annee à adapter
-print(CA_vendeur_an(df_activite,2023))
-
-## CA / (VENDEUR, ATELIER)
-CA_vendeur_atelier_an(df_activite,2023) #annee à adapter
-print(CA_vendeur_atelier_an(df_activite,2023))
-
-## CA / CLIENT / AN
-CA_par_client(df_commande, 2023)
-print(CA_par_client(df_commande, 2023))
-
-## CA / AN (TABLEAU CHAQUE MOIS)
-print(CA_annuel(df_commande,2023))
-
-## REVENU NET / AN (TABLEAU CHAQUE MOIS)
-print(revenu_net_annuel(df_commande,2023))
-
-## CA ANNUEL / ANS
-print(CA_par_ans(df_commande))
-
-## REVENU NET ANNUEL / ANS
-print(revenu_net_par_ans(df_commande))
+# ## CA PAR ATELIER / MOIS
+# CA_atelier_mois(df_activite,1,2023) #mois,annee à adapter
+# for i in range(1,13):
+#     print(CA_atelier_mois(df_activite,i,2023))
 
 
+# ## CA / VENDEUR
+# CA_vendeur_an(df_activite,2023) #annee à adapter
+# print(CA_vendeur_an(df_activite,2023))
+
+# ## CA / (VENDEUR, ATELIER)
+# CA_vendeur_atelier_an(df_activite,2023) #annee à adapter
+# print(CA_vendeur_atelier_an(df_activite,2023))
+
+# ## CA / CLIENT / AN
+# CA_par_client(df_commande, 2023)
+# print(CA_par_client(df_commande, 2023))
+
+# ## CA / AN (TABLEAU CHAQUE MOIS)
+# print(CA_annuel(df_commande,2023))
+
+# ## REVENU NET / AN (TABLEAU CHAQUE MOIS)
+# print(revenu_net_annuel(df_commande,2023))
+
+# ## CA ANNUEL / ANS
+# print(CA_par_ans(df_commande))
+
+# ## REVENU NET ANNUEL / ANS
+# print(revenu_net_par_ans(df_commande))
 
 
-### NOMBRE ACHAT ###
-## NA ATELIER / AN
-nbr_atelier_an(df_activite,2023) #annee à adapter
-print(nbr_atelier_an(df_activite,2023))
+
+
+# ### NOMBRE ACHAT ###
+# ## NA ATELIER / AN
+# nbr_atelier_an(df_activite,2023) #annee à adapter
+# print(nbr_atelier_an(df_activite,2023))
 
 
 ### NOMBRE PERSONNES ####
 ## NBR PERSONNE / ATELIER / MOIS
-nbr_personne_atelier_mois(df_commande,1,2023)
-for i in range(1,13):
-    print(nbr_personne_atelier_mois(df_commande,i,2023))
+# print(nbr_personne_atelier_mois(df_commande,2023))
+# for i in range(1,13):
+#     print(nbr_personne_atelier_mois(df_commande,i,2023))
 
 

@@ -27,16 +27,14 @@ pd.options.mode.chained_assignment = None
                                     *CA moyen
 '''
 #utilitaire
-def n_mois_to_mois(n) :
-    l_mois={
-        1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
-        7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
-        }
-    return(l_mois[n])
+l_mois={
+    1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
+    7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
+}
 
 #permet d'obtenir les achats dans un mois,année donnés (rentrer mois et an en int)
 def achat_mois(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_achat']=pd.to_datetime(df['commande_date_achat']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_achat'].dt.month == mois]
     df=df[df['commande_date_achat'].dt.year == an]
@@ -44,82 +42,121 @@ def achat_mois(df_entree,mois,an):
 
 #permet d'obtenir les achats dans une année donnée (rentrer annne en int)
 def achat_an(df_entree, an):
-    df=df_entree
+    df=df_entree.copy()
     df['commande_date_achat']=pd.to_datetime(df['commande_date_achat']) #on convertit la colonne en datetime pour pouvoir travailler dessus
     df=df[df['commande_date_achat'].dt.year == an]
     return df
 
+def achat_an_soin(df_entree, an):
+    df=df_entree.copy()
+    df['commande_date_soin']=pd.to_datetime(df['commande_date_soin']) #on convertit la colonne en datetime pour pouvoir travailler dessus
+    df=df[df['commande_date_soin'].dt.year == an]
+    return df
+
+# modèle de comment est calculé le CA
+def CA(df_entree):
+    df=df_entree.copy()
+    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
+    return df['chiffre_affaire']
+
+# modèle de comment est calculé le revenu net
+def revenu_net(df_entree):
+    df=df_entree.copy()
+    df['revenu_net']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission'] - df['commande_rsi']
+    return df['revenu_net']
+
+
 def CA_atelier_an(df_entree,an): #on donne l'annee en int
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an) # on trie pour obtenir les dates d'achat d'une seule année
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite'] # on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['activite_nom','prix_x_qte']] # on affiche juste nom et CA pour clarté
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
+    df['chiffre_affaire']= CA(df)# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
+    df=df[['activite_nom','chiffre_affaire']] # on affiche juste nom et CA pour clarté
+    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite
+    df=df.reset_index()
     return df
 
 def CA_atelier_mois(df_entree,mois,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_mois(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['activite_nom','prix_x_qte']] #on affiche juste nom et CA pour clarté
-    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite)
+    df['chiffre_affaire']=CA(df)
+    df=df[['activite_nom','chiffre_affaire']] #on affiche juste nom et CA pour clarté
+    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite)
+    df=df.reset_index()
     return df
 
 def CA_vendeur_an(df_entree,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['vendeur_nom','prix_x_qte']] #on affiche juste vendeur, nom et CA pour clarté
-    df=df.groupby(by=['vendeur_nom']).sum().sort_values(by=['prix_x_qte'], ascending=False) # donne le chiffre d'affaire total par activite
+    df['chiffre_affaire']=CA(df)
+    df=df[['vendeur_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
+    df=df.groupby(by=['vendeur_nom']).sum().sort_values(by=['chiffre_affaire'], ascending=False) # donne le chiffre d'affaire total par activite
+    df=df.reset_index()
     return df
 
 def CA_vendeur_atelier_an(df_entree,an):
-    df=df_entree
+    df=df_entree.copy()
     df=achat_an(df,an)
-    df['prix_x_qte']=df['activite_prix'] * df['commande_quantite']# on crée une colonne qui multiplie le prix par la qte pour avoir le CA brut
-    df=df[['vendeur_nom','activite_nom','prix_x_qte']] #on affiche juste vendeur, nom et CA pour clarté
+    df['chiffre_affaire']= CA(df)
+    df=df[['vendeur_nom','activite_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
     df=df.groupby(by=['vendeur_nom','activite_nom']).sum().sort_values(by=['vendeur_nom','activite_nom']) # donne le chiffre d'affaire total par activite
-    ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
+    df=df.reset_index()
     return df
 
-def nbr_commande_atelier_an(df_entree,an):
-    df=df_entree
+def nbr_atelier_an(df_entree,an):
+    df=df_entree.copy()
     df_nbr_atelier_an=achat_an(df,an)# on trie pour obtenir les dates d'achat d'une seule année
     df_nbr_atelier_an=df_nbr_atelier_an[['type_activite_id','activite_nom','commande_quantite']] #on affiche juste nom et CA pour clarté
     df_nbr_atelier_an=df_nbr_atelier_an.groupby(by=['activite_nom','type_activite_id']).sum().sort_values(by=['type_activite_id']) # donne le chiffre d'affaire total par activite
     df2=df_table_type_activite.merge(df_nbr_atelier_an,on=('type_activite_id'), how="left")
     df2=df2[['activite_nom','commande_quantite']].sort_values(by=['commande_quantite'],ascending=False)
+    df2=df2.rename(columns={"commande_quantite":"nbr_ateliers"})
     df2=df2.fillna(0)
-    df2["commande_quantite"]=df2["commande_quantite"].astype("int32")
-    df2=df2.rename(columns={"commande_quantite":"nbr_gens"})
+    df2['nbr_ateliers']=df2['nbr_ateliers'].astype('Int32')
     return df2
-    # # print(df_nbr[df_nbr['activite_nom']=='Intervention Extérieure sur devis']) #permet de selectionner une activité en particulier, est-ce que je le mets dans une autre ft?
 
-def nbr_commande_atelier_mois(df_entree,mois,an):
-    df=df_entree
-    df=achat_mois(df,mois,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+def moy_personne_atelier_an(df_entree,an):
+    df=df_entree.copy()
+    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
     df=df[['commande_date_soin','activite_nom','commande_quantite']]
-    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+    df=df.groupby(by=['commande_date_soin','activite_nom']).sum().sort_values(by=['activite_nom'], ascending=False).reset_index()
     df=df[['activite_nom','commande_quantite']]
-    df=df.fillna(0)
-    df["commande_quantite"]=df["commande_quantite"].astype("int32")
+    df=df.groupby(by=['activite_nom']).mean().sort_values(by=['commande_quantite'], ascending=False).reset_index()
+    df=df.round(2)
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
-def CA(df_entree):
+# renvoie un tableau avec le CA par mois pour toute l'année
+def CA_annuel(df_entree,an):
     df=df_entree.copy()
-    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
-    return df['chiffre_affaire']
+    df=achat_an(df,an)
+    df['mois']=df['commande_date_achat'].dt.month
+    df['chiffre_affaire']=CA(df)
+    df=df[['mois','chiffre_affaire']]
+    df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
+    df['mois']=df['mois'].replace(l_mois)
+    return df
+
+def revenu_net_annuel(df_entree,an):
+    df=df_entree.copy()
+    df=achat_an(df,an)
+    df['mois']=df['commande_date_achat'].dt.month
+    df['revenu_net']=revenu_net(df)
+    df=df[['mois','revenu_net']]
+    df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
+    df['mois']=df['mois'].replace(l_mois)
+    return df
 
 def CA_par_client(df_entree, an):
     df=df_entree
     df=achat_an(df, an)
     df["chiffre_affaire"]=CA(df)
     df=df[['client_id','client_prenom','client_nom', 'chiffre_affaire']]
-    df=df.groupby(["client_id", "client_prenom", "client_nom"]).sum().sort_values(by=['chiffre_affaire'], ascending=False)
-    print(df["client_nom"])
-    # df = df.reset_index(level="client_id", drop=True)
+    df=df.groupby(["client_id", "client_prenom", "client_nom"],as_index=False).sum().sort_values(by=['chiffre_affaire'], ascending=False)
+    df=df[["client_prenom", "client_nom",'chiffre_affaire']]
     return df
+
+
+
 
 #Main
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
@@ -136,46 +173,58 @@ df_table_activite= pd.read_sql_query('SELECT * FROM activite',conn)
 df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 
 
+# jointure des 4 tables type_activite ,commande, activite, commande_activite et vendeur(par la gauche pour garder affiché tous les noms d'activite)
+df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
+df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="inner")
+df_activite=df_activite.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="inner")
+df_activite=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner') # on transforme df_activite pour incorporer vendeur_nom
+df_activite=df_activite.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
+df_activite=df_activite.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
 
-# jointure des 5 tables type_activite ,commande, activite, commande_activite et vendeur (par la gauche pour garder affiché tous les noms d'activite)
-df_commande=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
-df_commande=df_commande.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="left")
-df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="left")
-df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner')# ontransforme df_commande pour incorporer vendeur_nom
-df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'),how='inner')
+# jointure de table avec comme table principale commande_activite
+# df_commande=df_table_commande_activite.join(df_table_activite.set_index('activite_id'),on=('activite_id'), how="inner")
+# df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="inner")
+# df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'),on=('type_activite_id'), how="inner")
+# df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
+# df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner') # on transforme df_activite pour incorporer vendeur_nom
+# df_commande=df_commande.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
+# df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite_prix']=df_commande[df_commande['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
+
+#on transforme les prix des lignes Remboursement en négatif
+df_activite.loc[df_activite['type_transaction_nom'] == "Remboursement",'activite_prix']=df_activite[df_activite['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
+#loc => 1er argument: ligne (ici filtre) 2eme argument:colonne
 
 
-print(CA_par_client(df_commande, 2023))
 ### CHIFFRE D'AFFAIRE ###
 ##  CA PAR ATELIER / AN
 def show_atelier_an(df, annee) :
     df_atelier_an=CA_atelier_an(df, annee)
     fig, ax = plt.subplots()
-    y=df_atelier_an.index
-    x=df_atelier_an["prix_x_qte"]
+    y=df_atelier_an["activite_nom"]
+    x=df_atelier_an["chiffre_affaire"]
     bars=ax.barh(y, x)
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par atelier")
 
-# show_atelier_an(df_commande, 2023)
+# show_atelier_an(df_activite, 2023)
 
 
 # ## CA PAR ATELIER / MOIS
 def show_atelier_mois(df, mois, annee) :
     df_atelier_mois=CA_atelier_mois(df,mois,annee) #mois,annee à adapter
     fig, ax = plt.subplots()
-    y=df_atelier_mois.index
-    x=df_atelier_mois["prix_x_qte"]
+    y=df_atelier_mois["activite_nom"]
+    x=df_atelier_mois["chiffre_affaire"]
     bars=ax.barh(y, x)
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
     de_ou_d = "d'" if mois in (4, 8, 10) else "de "
-    ax.set_title(f"Chiffre d'affaire du mois {de_ou_d}{ n_mois_to_mois(mois) } {annee} par atelier")
+    ax.set_title(f"Chiffre d'affaire du mois {de_ou_d}{ l_mois[mois] } {annee} par atelier")
 
-# show_atelier_mois(df_commande,2,2023)
+# show_atelier_mois(df_activite,1,2023)
 # for i in range(1, 13):
 #     show_atelier_mois(df_commande,i,2023)
 
@@ -184,28 +233,28 @@ def show_atelier_mois(df, mois, annee) :
 def show_vendeur_an(df, annee) :
     df_vendeur_an=CA_vendeur_an(df, annee)
     fig, ax = plt.subplots()
-    y=df_vendeur_an.index
-    x=df_vendeur_an["prix_x_qte"]
+    y=df_vendeur_an["vendeur_nom"]
+    x=df_vendeur_an["chiffre_affaire"]
     bars=ax.bar(y, x)
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.25)
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par vendeur")
 
-# show_vendeur_an(df_commande, 2023)
+# show_vendeur_an(df_activite, 2023)
 
 
 ## CA / (VENDEUR, ATELIER)
 def show_vendeur_atelier_an(df, annee) :
     df_vendeur_atelier_an=CA_vendeur_atelier_an(df, annee)
     fig, ax = plt.subplots()
-    l_vendeurs=df_vendeur_atelier_an.index.get_level_values("vendeur_nom").to_list() #recupere les noms des vendeurs
+    l_vendeurs=df_vendeur_atelier_an["vendeur_nom"].to_list() #recupere les noms des vendeurs
     l_vendeurs=list(dict.fromkeys(l_vendeurs)) # retire les doublons
 
     for v in l_vendeurs :
-        df_temp = df_vendeur_atelier_an.filter(like=v, axis=0) # le dataframe correspondant au vendeur
-        y=df_temp.index.get_level_values("activite_nom").to_list()
-        x=df_temp["prix_x_qte"].values.tolist()
+        df_temp = df_vendeur_atelier_an[df_vendeur_atelier_an["vendeur_nom"]==v] # le dataframe correspondant au vendeur
+        y=df_temp["activite_nom"].to_list()
+        x=df_temp["chiffre_affaire"].values.tolist()
         bars=ax.barh(y, x, label=v) # cree les barres correspondantes et rajoute la legende associee
         ax.bar_label(bars)
 
@@ -213,29 +262,29 @@ def show_vendeur_atelier_an(df, annee) :
     plt.gcf().subplots_adjust(left=.25)
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par atelier et par vendeur")
 
-# show_vendeur_atelier_an(df_commande, 2023)
+# show_vendeur_atelier_an(df_activite, 2023)
 
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
 def show_nbr_atelier_an(df, annee) :
-    df_nbr_atelier_an = nbr_commande_atelier_an(df, annee)
+    df_nbr_atelier_an = nbr_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
-    x=df_nbr_atelier_an["nbr_gens"]
+    x=df_nbr_atelier_an["nbr_ateliers"]
     bars=ax.barh(y, x)
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.27)
     ax.set_title(f"nombre d'ateliers commandes ({annee})")
 
-# show_nbr_atelier_an(df_commande, 2023)
+# show_nbr_atelier_an(df_activite, 2023)
 
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / MOIS
-def show_nbr_atelier_mois(df, mois, annee) :
-    df_nbr_atelier_an = nbr_commande_atelier_mois(df, mois, annee)
+def show_nbr_atelier_mois(df, annee) :
+    df_nbr_atelier_an = moy_personne_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
     x=df_nbr_atelier_an["nbr_gens"]
@@ -243,11 +292,51 @@ def show_nbr_atelier_mois(df, mois, annee) :
 
     ax.bar_label(bars)
     plt.gcf().subplots_adjust(left=.27)
-    ax.set_title(f"nombre d'ateliers commandes ({annee})")
-    de_ou_d = "d'" if mois in (4, 8, 10) else "de "
-    ax.set_title(f"nombre d'ateliers commandes au mois {de_ou_d}{ n_mois_to_mois(mois) } {annee}")
+    ax.set_title(f"nombre de personnes en moyenne ayant participe aux ateliers ({annee})")
 
-# show_nbr_atelier_mois(df_commande, 8, 2023)
+# show_nbr_atelier_mois(df_activite, 2023)
 
 
+### CA ANNUEL POUR CHAQUE MOIS ###
+def show_CA_annuel(df, annee) :
+    df_CA_annuel = CA_annuel(df, annee)
+    fig, ax = plt.subplots()
+    x=df_CA_annuel["mois"]
+    y=df_CA_annuel["chiffre_affaire"]
+    bars=ax.bar(x, y)
+
+    ax.bar_label(bars)
+    ax.set_title(f"chiffre d'affaire annuel ({annee})")
+
+# show_CA_annuel(df_activite, 2023)
+
+
+### REVENU NET ANNUEL POUR CHAQUE MOIS ###
+def show_revenu_net_annuel(df, annee) :
+    df_revenu_annuel = revenu_net_annuel(df, annee)
+    fig, ax = plt.subplots()
+    x=df_revenu_annuel["mois"]
+    y=df_revenu_annuel["revenu_net"]
+    bars=ax.bar(x, y)
+
+    ax.bar_label(bars)
+    ax.set_title(f"chiffre d'affaire annuel ({annee})")
+
+# show_revenu_net_annuel(df_activite, 2023)
+
+
+def show_CA_par_client(df, annee) :
+    df_CA_par_client=CA_par_client(df, annee)
+    df_CA_par_client=df_CA_par_client.head(30)
+
+    fig, ax = plt.subplots()
+
+    fig.patch.set_visible(False)
+    ax.axis('off')
+
+    ax.set_title(f"top 30 des clients ayant achete des produits ({annee})")
+    table = ax.table(cellText=df_CA_par_client.values, colLabels=["nom", "prenom", "argent depensé"], bbox=[0, 0, 1, 1])
+
+
+# show_CA_par_client(df_activite, 2023)
 plt.show()
