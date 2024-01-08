@@ -188,7 +188,7 @@ df_activite.loc[df_activite['type_transaction_nom'] == "Remboursement",'activite
 
 ### CHIFFRE D'AFFAIRE ###
 ##  CA PAR ATELIER / AN
-def show_atelier_an(df, annee) :
+def show_atelier_an(df, mois, annee, df_all_activite) :
     df_atelier_an=CA_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_atelier_an["activite_nom"]
@@ -200,7 +200,7 @@ def show_atelier_an(df, annee) :
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par atelier")
 
 # ## CA PAR ATELIER / MOIS
-def show_atelier_mois(df, mois, annee) :
+def show_atelier_mois(df, mois, annee, df_all_activite) :
     df_atelier_mois=CA_atelier_mois(df,mois,annee) #mois,annee à adapter
     fig, ax = plt.subplots()
     y=df_atelier_mois["activite_nom"]
@@ -213,7 +213,7 @@ def show_atelier_mois(df, mois, annee) :
     ax.set_title(f"Chiffre d'affaire du mois {de_ou_d}{ l_mois[mois] } {annee} par atelier")
 
 # CA / VENDEUR
-def show_vendeur_an(df, annee) :
+def show_vendeur_an(df, mois, annee, df_all_activite) :
     df_vendeur_an=CA_vendeur_an(df, annee)
     fig, ax = plt.subplots()
     y=df_vendeur_an["vendeur_nom"]
@@ -225,7 +225,7 @@ def show_vendeur_an(df, annee) :
     ax.set_title(f"Chiffre d'affaire annuel ({annee}) par vendeur")
 
 ## CA / (VENDEUR, ATELIER)
-def show_vendeur_atelier_an(df, annee) :
+def show_vendeur_atelier_an(df, mois, annee, df_all_activite) :
     df_vendeur_atelier_an=CA_vendeur_atelier_an(df, annee)
     fig, ax = plt.subplots()
     l_vendeurs=df_vendeur_atelier_an["vendeur_nom"].to_list() #recupere les noms des vendeurs
@@ -244,7 +244,7 @@ def show_vendeur_atelier_an(df, annee) :
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
-def show_nbr_atelier_an(df, annee, df_all_activite) :
+def show_nbr_atelier_an(df, mois, annee, df_all_activite) :
     df_nbr_atelier_an = nbr_atelier_an(df, annee, df_all_activite)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
@@ -257,7 +257,7 @@ def show_nbr_atelier_an(df, annee, df_all_activite) :
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / MOIS
-def show_nbr_atelier_mois(df, annee) :
+def show_nbr_atelier_mois(df, mois, annee, df_all_activite) :
     df_nbr_atelier_an = moy_personne_atelier_an(df, annee)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
@@ -269,7 +269,7 @@ def show_nbr_atelier_mois(df, annee) :
     ax.set_title(f"nombre de personnes en moyenne ayant participe aux ateliers ({annee})")
 
 ### CA ANNUEL POUR CHAQUE MOIS ###
-def show_CA_annuel(df, annee) :
+def show_CA_annuel(df, mois, annee, df_all_activite) :
     df_CA_annuel = CA_annuel(df, annee)
     fig, ax = plt.subplots()
     x=df_CA_annuel["mois"]
@@ -280,7 +280,7 @@ def show_CA_annuel(df, annee) :
     ax.set_title(f"chiffre d'affaire annuel ({annee})")
 
 ### REVENU NET ANNUEL POUR CHAQUE MOIS ###
-def show_revenu_net_annuel(df, annee) :
+def show_revenu_net_annuel(df, mois, annee, df_all_activite) :
     df_revenu_annuel = revenu_net_annuel(df, annee)
     fig, ax = plt.subplots()
     x=df_revenu_annuel["mois"]
@@ -288,9 +288,9 @@ def show_revenu_net_annuel(df, annee) :
     bars=ax.bar(x, y)
 
     ax.bar_label(bars)
-    ax.set_title(f"chiffre d'affaire annuel ({annee})")
+    ax.set_title(f"revenu net annuel ({annee})")
 
-def show_CA_par_client(df, annee) :
+def show_CA_par_client(df, mois, annee, df_all_activite) :
     df_CA_par_client=CA_par_client(df, annee)
     df_CA_par_client=df_CA_par_client.head(30)
 
@@ -308,70 +308,73 @@ def show_CA_par_client(df, annee) :
 
 
 
-from tkinter import *
+import tkinter as tk
+from tkinter import ttk
 
-fenetre = Tk()
+fenetre = tk.Tk()
+frame=tk.Frame(fenetre)
 
-l = LabelFrame(fenetre, text="Mois", padx=20, pady=20, background='chartreuse')
-l.pack(fill="both", expand="yes")
+l = tk.LabelFrame(frame, text="Mois")
+l.grid(row=0, column=0)
 
-l2 = LabelFrame(fenetre, text="annee", padx=20, pady=20)
-l2.pack(fill="both", expand="yes")
+l2 = tk.LabelFrame(frame, text="annee", padx=20, pady=20)
+l2.grid(row=0, column=1)
 
-l3 = LabelFrame(fenetre, text="fonction", padx=20, pady=20)
-l3.pack(fill="both", expand="yes")
+l3 = tk.LabelFrame(frame, text="fonction", padx=20, pady=20)
+l3.grid(row=0, column=2)
+
+frame.pack()
+
+lbox_max_width=50
 
 # liste
-mois = Listbox(l, exportselection=0)
-mois.insert(1, "janvier")
-mois.insert(2, "fevrier")
-mois.insert(3, "mars")
-mois.insert(4, "avril")
-mois.insert(5, "mai")
-mois.insert(6, "juin")
-mois.insert(7, "juillet")
-mois.insert(8, "aout")
-mois.insert(9, "septembre")
-mois.insert(10, "octobre")
-mois.insert(11, "novembre")
-mois.insert(12, "decembre")
+lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
+selected_month = tk.StringVar()
+mois = ttk.Combobox(l, exportselection=0, width=lbox_max_width, textvariable=selected_month)
+mois['values']=lmois #ajoute la liste des valeurs a la liste deroulante
+mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
 mois.pack()
 
-annee = Listbox(l2, exportselection=0)
-annee.insert(1, "2023")
-annee.insert(2, "2024")
+lannees=df_table_commande
+lannees['commande_date_achat']=pd.to_datetime(lannees['commande_date_achat'])
+lannees["annee"]=lannees['commande_date_achat'].dt.year
+lannees=lannees["annee"].drop_duplicates().to_list()
+
+selected_year=tk.StringVar()
+annee = ttk.Combobox(l2, exportselection=0, width=lbox_max_width, textvariable=selected_year)
+annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
+annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
 annee.pack()
 
 # fonctions
-fonction = Listbox(l3, exportselection=0)
-fonction.insert(1, "chiffre d'affaire annuel par atelier")
-fonction.insert(2, "chiffre d'affaire du mois par atelier")
-fonction.insert(3, "chiffre d'affaire annuel par vendeur")
+dfonctions={
+    "chiffre d'affaire annuel par atelier" : show_atelier_an,
+    "chiffre d'affaire du mois par atelier" : show_atelier_mois,
+    "chiffre d'affaire annuel par vendeur" : show_vendeur_an,
+    "chiffre d'affaire annuel par atelier et par vendeur" : show_vendeur_atelier_an,
+    "nombre d'ateliers commandes" : show_nbr_atelier_an,
+    "nombre de personne en moyenne par atelier" : show_nbr_atelier_mois,
+    "chiffre d'affaire annuel par mois" : show_CA_annuel,
+    "revenu net par mois" : show_revenu_net_annuel,
+    "chiffre d'affaire max par client" : show_CA_par_client
+}
+selected_function=tk.StringVar()
+fonction = ttk.Combobox(l3, exportselection=0, width=lbox_max_width, textvariable=selected_function)
+fonction['values']=list(dfonctions.keys()) #ajoute la liste des valeurs a la liste deroulante
+fonction['state'] = 'readonly' #empeche d'entrer des valeurs custom
 fonction.pack()
 
+def selected_item(event):
+    m = int(mois.current())+1
+    a = int(annee.get())
+    f = dfonctions[fonction.get()]
 
-def selected_item():
-    m = int(mois.curselection()[0])+1
-    a=0
-    for i in annee.curselection():
-        a=int(annee.get(i))
-    f = int(fonction.curselection()[0])
-    if (f==0) :
-        show_atelier_an(df_activite, a)
-    if (f==1) :
-        show_atelier_mois(df_activite, m+1, a)
-    if (f==2) :
-        show_vendeur_an(df_activite, a)
+    f(df_activite, m, a, df_table_type_activite)
 
-
-    print(m, a)
     plt.show()
  
-btn = Button(fenetre, text='valider', command=selected_item, relief='solid', cursor='heart', background='red', width=50, height=25)
- 
-btn.pack(side='bottom')
-
-mois.pack()
-annee.pack()
+mois.bind('<<ComboboxSelected>>', selected_item)
+annee.bind('<<ComboboxSelected>>', selected_item)
+fonction.bind('<<ComboboxSelected>>', selected_item)
 
 fenetre.mainloop()
