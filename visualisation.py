@@ -102,12 +102,12 @@ def CA_vendeur_atelier_an(df_entree,an):
     df=df.reset_index()
     return df
 
-def nbr_atelier_an(df_entree,an):
+def nbr_atelier_an(df_entree,an, df_all_activite):
     df=df_entree.copy()
     df_nbr_atelier_an=achat_an(df,an)# on trie pour obtenir les dates d'achat d'une seule année
     df_nbr_atelier_an=df_nbr_atelier_an[['type_activite_id','activite_nom','commande_quantite']] #on affiche juste nom et CA pour clarté
     df_nbr_atelier_an=df_nbr_atelier_an.groupby(by=['activite_nom','type_activite_id']).sum().sort_values(by=['type_activite_id']) # donne le chiffre d'affaire total par activite
-    df2=df_table_type_activite.merge(df_nbr_atelier_an,on=('type_activite_id'), how="left")
+    df2=df_all_activite.merge(df_nbr_atelier_an,on=('type_activite_id'), how="left")
     df2=df2[['activite_nom','commande_quantite']].sort_values(by=['commande_quantite'],ascending=False)
     df2=df2.rename(columns={"commande_quantite":"nbr_ateliers"})
     df2=df2.fillna(0)
@@ -174,21 +174,12 @@ df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
 
 
 # jointure des 4 tables type_activite ,commande, activite, commande_activite et vendeur(par la gauche pour garder affiché tous les noms d'activite)
-df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="left")
+df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="inner")
 df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="inner")
 df_activite=df_activite.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="inner")
 df_activite=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner') # on transforme df_activite pour incorporer vendeur_nom
 df_activite=df_activite.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
 df_activite=df_activite.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
-
-# jointure de table avec comme table principale commande_activite
-# df_commande=df_table_commande_activite.join(df_table_activite.set_index('activite_id'),on=('activite_id'), how="inner")
-# df_commande=df_commande.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="inner")
-# df_commande=df_commande.join(df_table_type_activite.set_index('type_activite_id'),on=('type_activite_id'), how="inner")
-# df_commande=df_commande.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
-# df_commande=df_commande.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner') # on transforme df_activite pour incorporer vendeur_nom
-# df_commande=df_commande.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
-# df_commande.loc[df_commande['type_transaction_nom'] == "Remboursement",'activite_prix']=df_commande[df_commande['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
 
 #on transforme les prix des lignes Remboursement en négatif
 df_activite.loc[df_activite['type_transaction_nom'] == "Remboursement",'activite_prix']=df_activite[df_activite['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
@@ -267,8 +258,8 @@ def show_vendeur_atelier_an(df, annee) :
 
 ### NOMBRE ACHAT ###
 ## NA ATELIER / AN
-def show_nbr_atelier_an(df, annee) :
-    df_nbr_atelier_an = nbr_atelier_an(df, annee)
+def show_nbr_atelier_an(df, annee, df_all_activite) :
+    df_nbr_atelier_an = nbr_atelier_an(df, annee, df_all_activite)
     fig, ax = plt.subplots()
     y=df_nbr_atelier_an["activite_nom"]
     x=df_nbr_atelier_an["nbr_ateliers"]
@@ -278,7 +269,7 @@ def show_nbr_atelier_an(df, annee) :
     plt.gcf().subplots_adjust(left=.27)
     ax.set_title(f"nombre d'ateliers commandes ({annee})")
 
-# show_nbr_atelier_an(df_activite, 2023)
+# show_nbr_atelier_an(df_activite, 2023, df_table_type_activite)
 
 
 ### NOMBRE ACHAT ###
