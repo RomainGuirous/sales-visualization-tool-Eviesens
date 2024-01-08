@@ -311,7 +311,7 @@ def show_revenu_net_annuel(df, annee) :
     bars=ax.bar(x, y)
 
     ax.bar_label(bars)
-    ax.set_title(f"chiffre d'affaire annuel ({annee})")
+    ax.set_title(f"revenu net annuel ({annee})")
 
 # show_revenu_net_annuel(df_activite, 2023)
 
@@ -329,5 +329,5 @@ def show_CA_par_client(df, annee) :
     table = ax.table(cellText=df_CA_par_client.values, colLabels=["nom", "prenom", "argent depensé"], bbox=[0, 0, 1, 1])
 
 
-# show_CA_par_client(df_activite, 2023)
+show_CA_par_client(df_activite, 2023)
 plt.show()
