@@ -312,7 +312,7 @@ from tkinter import *
 
 fenetre = Tk()
 
-l = LabelFrame(fenetre, text="Mois", padx=20, pady=20)
+l = LabelFrame(fenetre, text="Mois", padx=20, pady=20, background='chartreuse')
 l.pack(fill="both", expand="yes")
 
 l2 = LabelFrame(fenetre, text="annee", padx=20, pady=20)
@@ -367,7 +367,7 @@ def selected_item():
     print(m, a)
     plt.show()
  
-btn = Button(fenetre, text='valider', command=selected_item)
+btn = Button(fenetre, text='valider', command=selected_item, relief='solid', cursor='heart', background='red', width=50, height=25)
  
 btn.pack(side='bottom')
 
