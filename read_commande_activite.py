@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
 from sqlalchemy import create_engine
 import re
-import mysql.connector
 pd.set_option('display.max_rows', 500)
 
 # commande
@@ -246,13 +246,19 @@ def add_new_command_activite (df_to_add, connection) :
 #Main
 conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
-filepaths=os.listdir("./donnees/fiches_mensuelles/") #récupère liste des noms des fichiers dans le dossier "fiches_mensuelles"
-
 id_type_intervention=get_type_intervention_id(conn)
 id_vendeur_intervention=get_vendeur_intervention_id(conn)
 
-for i in range(len(filepaths)) :
-    filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i] #on récupère liste des filepath de chaque fiche mensuelle
+folder_filepath=sys.argv[1]
+filepaths_list=[]
+filepaths=[]
+if os.path.isdir(folder_filepath) :
+    filepaths_list=os.listdir(folder_filepath)
+    for i in range(len(filepaths_list)) :
+        if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) :
+            filepaths.append(folder_filepath+"/"+filepaths_list[i])
+elif os.path.isfile(folder_filepath) :
+    filepaths=[folder_filepath]
 
 for filepath in filepaths :
     print(filepath)
