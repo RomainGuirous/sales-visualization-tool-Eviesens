@@ -1,12 +1,10 @@
 import pandas as pd
 import os
-import numpy as np
+import sys
+import subprocess
 from sqlalchemy import create_engine
-import re
 pd.set_option('display.max_rows', 500)
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-from textwrap import wrap
 pd.options.mode.chained_assignment = None
 # pour 1 atelier donné :
 # -combien de  personnes en moyenne
@@ -310,6 +308,8 @@ def show_CA_par_client(df, mois, annee, df_all_activite) :
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog as fd
+from tkinter.messagebox import askyesno
 
 fenetre = tk.Tk()
 fenetre.title("Calculs de chiffre d'affaire")
@@ -332,10 +332,48 @@ lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20)
 lf3.grid(row=0, column=2)
 lf3['background']='#f6e58d'
 
-frame.pack(fill=None, expand=False)
 frame.place(relx=0.5, rely=0.5, anchor='center')
 
 lbox_max_width=50
+
+# open button
+def select_file():
+    filetypes = (
+        ('text files', '*.csv'),
+        ('All files', '*.*')
+    )
+
+    filename = fd.askopenfile(
+        title='choisir un fichier',
+        initialdir=os.getcwd(),
+        filetypes=filetypes)
+    if filename :
+        subprocess.call([sys.executable, "main.py", filename.name])
+
+def select_directory():
+    filename = fd.askdirectory(
+        title='choisir un dossier',
+        initialdir=os.getcwd())
+    if filename :
+        subprocess.call([sys.executable, "main.py", filename])
+
+def delete_all() :
+    answer = askyesno(title='confirmation',
+                    message='voulez-vous supprimer les données ?')
+    if answer :
+        subprocess.call([sys.executable, "delete_all.py"])
+
+
+button_read_file = ttk.Button(frame, text='choisir un fichier', command=select_file)
+button_read_directory = ttk.Button(frame, text='choisir un dossier', command=select_directory)
+button_delete_all = ttk.Button(frame, text='supprimer la bdd', command=delete_all)
+
+f1=tk.Frame(frame)
+f2=tk.Frame(frame)
+f3=tk.Frame(frame)
+button_read_file.grid(row=1, column=0)
+button_read_directory.grid(row=1, column=1)
+button_delete_all.grid(row=1, column=2)
 
 # liste
 lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
@@ -345,15 +383,19 @@ mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
 mois.current(0)
 mois.pack()
 
-lannees=df_table_commande
-lannees['commande_date_achat']=pd.to_datetime(lannees['commande_date_achat'])
-lannees["annee"]=lannees['commande_date_achat'].dt.year
-lannees=lannees["annee"].drop_duplicates().to_list()
+def load_annee() :
+    res=df_table_commande.copy()
+    res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
+    res["annee"]=res['commande_date_achat'].dt.year
+    res=res["annee"].drop_duplicates().to_list()
+    return(res)
 
+lannees=load_annee()
 annee = ttk.Combobox(lf2, exportselection=0, width=lbox_max_width)
 annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
 annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
-annee.current(0)
+if(len(lannees)>0) :
+    annee.current(0)
 annee.pack()
 
 # fonctions

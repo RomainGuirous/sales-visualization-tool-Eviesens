@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
 from sqlalchemy import create_engine
 import re
 pd.set_option('display.max_rows', 500)
@@ -135,15 +136,16 @@ def add_new_activite(df_to_add, connection) :
 #Main
 conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
 
-filepaths_list=os.listdir("./donnees/fiches_mensuelles/")
-
+folder_filepath=sys.argv[1]
+filepaths_list=[]
 filepaths=[]
-for i in range(len(filepaths_list)) :
-    if is_valid_filename(filepaths_list[i]) : # ne lit que les fichiers contenant un mois et une annee
-        filepaths.append(filepaths_list[i])
-
-for i in range(len(filepaths)) :
-    filepaths[i]="./donnees/fiches_mensuelles/"+filepaths[i]
+if os.path.isdir(folder_filepath) :
+    filepaths_list=os.listdir(folder_filepath)
+    for i in range(len(filepaths_list)) :
+        if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) & is_valid_filename(filepaths_list[i]) : # ne lit que les fichiers contenant un mois et une annee
+            filepaths.append(folder_filepath+"/"+filepaths_list[i])
+elif os.path.isfile(folder_filepath) :
+    filepaths=[folder_filepath]
 
 for filepath in filepaths :
     print(filepath)
