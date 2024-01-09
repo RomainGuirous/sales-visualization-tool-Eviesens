@@ -312,27 +312,37 @@ import tkinter as tk
 from tkinter import ttk
 
 fenetre = tk.Tk()
+fenetre.title("Calculs de chiffre d'affaire")
+fenetre.geometry("1200x300")
+fenetre.minsize(1200, 300)
+fenetre.maxsize(1200, 300)
+fenetre['background']='#7ed6df'
+
 frame=tk.Frame(fenetre)
 
-l = tk.LabelFrame(frame, text="Mois")
-l.grid(row=0, column=0)
+lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20)
+lf1.grid(row=0, column=0)
+lf1['background']='#f6e58d'
 
-l2 = tk.LabelFrame(frame, text="annee", padx=20, pady=20)
-l2.grid(row=0, column=1)
+lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20)
+lf2.grid(row=0, column=1)
+lf2['background']='#f6e58d'
 
-l3 = tk.LabelFrame(frame, text="fonction", padx=20, pady=20)
-l3.grid(row=0, column=2)
+lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20)
+lf3.grid(row=0, column=2)
+lf3['background']='#f6e58d'
 
-frame.pack()
+frame.pack(fill=None, expand=False)
+frame.place(relx=0.5, rely=0.5, anchor='center')
 
 lbox_max_width=50
 
 # liste
 lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
-selected_month = tk.StringVar()
-mois = ttk.Combobox(l, exportselection=0, width=lbox_max_width, textvariable=selected_month)
+mois = ttk.Combobox(lf1, exportselection=0, width=lbox_max_width)
 mois['values']=lmois #ajoute la liste des valeurs a la liste deroulante
 mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
+mois.current(0)
 mois.pack()
 
 lannees=df_table_commande
@@ -340,10 +350,10 @@ lannees['commande_date_achat']=pd.to_datetime(lannees['commande_date_achat'])
 lannees["annee"]=lannees['commande_date_achat'].dt.year
 lannees=lannees["annee"].drop_duplicates().to_list()
 
-selected_year=tk.StringVar()
-annee = ttk.Combobox(l2, exportselection=0, width=lbox_max_width, textvariable=selected_year)
+annee = ttk.Combobox(lf2, exportselection=0, width=lbox_max_width)
 annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
 annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
+annee.current(0)
 annee.pack()
 
 # fonctions
@@ -358,10 +368,10 @@ dfonctions={
     "revenu net par mois" : show_revenu_net_annuel,
     "chiffre d'affaire max par client" : show_CA_par_client
 }
-selected_function=tk.StringVar()
-fonction = ttk.Combobox(l3, exportselection=0, width=lbox_max_width, textvariable=selected_function)
+fonction = ttk.Combobox(lf3, exportselection=0, width=lbox_max_width)
 fonction['values']=list(dfonctions.keys()) #ajoute la liste des valeurs a la liste deroulante
 fonction['state'] = 'readonly' #empeche d'entrer des valeurs custom
+fonction.current(0)
 fonction.pack()
 
 def selected_item(event):
