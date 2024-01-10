@@ -346,9 +346,9 @@ frame.place(relx=0.5, rely=0.5, anchor='center')
 lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
 lf1.grid(row=0, column=0)
 # lf1.configure(font=font1)
-lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur)
+lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
 lf2.grid(row=0, column=1)
-lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur)
+lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
 lf3.grid(row=0, column=2)
 
 lframe_max_width=50
