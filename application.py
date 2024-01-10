@@ -322,20 +322,20 @@ fenetre.maxsize(1800, 300)
 #police ecriture
 font_titre_lf = tkFont.Font(family="Calibri", size=16, weight="bold", slant="italic",underline=True)
 font_liste_lf = tkFont.Font(family="Mongolian Baiti", size=12, weight="bold", slant="roman")
-font_button = tkFont.Font(family="Arial", size=16, weight="bold", slant="italic",underline=True)
+font_button = tkFont.Font(family="Arial", size=16, weight="bold", slant="italic",underline=False)
 
 #curseur
 curseur="heart"
 
 # couleurs
-window_color="#fa983a"
-frame_color="#78e08f"
-label_frame_color="#38ada9"
-button_color="#b71540"
-button_color_text='#f8c291'
-button_color_push='chartreuse'
-text_label_frame_color='#0c2461'
-titre_label_frame_color='#0c2461'
+window_color="#6c5ce7"
+frame_color="#6c5ce7"
+label_frame_color="#d63031"
+button_color="#a29bfe"
+button_color_text='#2d3436'
+button_color_push='#74b9ff'
+text_label_frame_color='#2d3436'
+titre_label_frame_color='#2d3436'
 
 
 fenetre['background']=window_color
