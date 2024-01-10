@@ -318,16 +318,17 @@ fenetre.minsize(1200, 300)
 fenetre.maxsize(1200, 300)
 
 # couleurs
-window_color="#7ed6df"
-frame_color="#badc58"
-label_frame_color="#f6e58d"
-button_color="#ff7979"
+window_color="#dff9fb"
+frame_color="#dff9fb"
+label_frame_color="#badc58"
+button_color="#f3a683"
 
 
 fenetre['background']=window_color
 
 frame=tk.Frame(fenetre, bg=frame_color)
 frame.place(relx=0.5, rely=0.5, anchor='center')
+
 
 lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color)
 lf1.grid(row=0, column=0)
