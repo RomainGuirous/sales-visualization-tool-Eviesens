@@ -349,18 +349,15 @@ mois.current(0)
 mois.pack()
 
 def load_annee() :
-    res=df_table_commande.copy()
+    res=pd.read_sql_query('SELECT * FROM commande',conn)
     res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
     res["annee"]=res['commande_date_achat'].dt.year
     res=res["annee"].drop_duplicates().to_list()
-    return(res)
+    return res
 
-lannees=load_annee()
-annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width)
-annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
+annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width, values=load_annee, postcommand=lambda: annee.configure(values=load_annee()))
 annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
-if(len(lannees)>0) :
-    annee.current(0)
+
 annee.pack()
 
 # fonctions
@@ -383,13 +380,15 @@ fonction.pack()
 
 # script selection
 def selected_item(event):
-    m = int(mois.current())+1
-    a = int(annee.get())
-    f = dfonctions[fonction.get()]
+    try:
+        m = int(mois.current())+1
+        a = int(annee.get())
+        f = dfonctions[fonction.get()]
+        f(df_activite, m, a, df_table_type_activite)
+        plt.show()
+    except ValueError as ve:
+        pass
 
-    f(df_activite, m, a, df_table_type_activite)
-
-    plt.show()
  
 mois.bind('<<ComboboxSelected>>', selected_item)
 annee.bind('<<ComboboxSelected>>', selected_item)
