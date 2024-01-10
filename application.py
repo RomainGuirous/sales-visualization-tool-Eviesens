@@ -310,30 +310,45 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 from tkinter.messagebox import askyesno
+import tkinter.font as tkFont
+
 
 fenetre = tk.Tk()
 fenetre.title("Calculs de chiffre d'affaire")
-fenetre.geometry("1200x300")
-fenetre.minsize(1200, 300)
-fenetre.maxsize(1200, 300)
+fenetre.geometry("1800x300")
+fenetre.minsize(1800, 300)
+fenetre.maxsize(1800, 300)
+
+#police ecriture
+font_titre_lf = tkFont.Font(family="Calibri", size=16, weight="bold", slant="italic",underline=True)
+font_liste_lf = tkFont.Font(family="Mongolian Baiti", size=12, weight="bold", slant="roman")
+font_button = tkFont.Font(family="Arial", size=16, weight="bold", slant="italic",underline=True)
+
+#curseur
+curseur="heart"
 
 # couleurs
-window_color="#7ed6df"
-frame_color="#badc58"
-label_frame_color="#f6e58d"
-button_color="#ff7979"
+window_color="#fa983a"
+frame_color="#78e08f"
+label_frame_color="#38ada9"
+button_color="#b71540"
+button_color_text='#f8c291'
+button_color_push='chartreuse'
+text_label_frame_color='#0c2461'
+titre_label_frame_color='#0c2461'
 
 
 fenetre['background']=window_color
 
-frame=tk.Frame(fenetre, bg=frame_color)
+frame=tk.Frame(fenetre, bg=frame_color, cursor=curseur)
 frame.place(relx=0.5, rely=0.5, anchor='center')
 
-lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color)
+lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
 lf1.grid(row=0, column=0)
-lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color)
+# lf1.configure(font=font1)
+lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur)
 lf2.grid(row=0, column=1)
-lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color)
+lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur)
 lf3.grid(row=0, column=2)
 
 lframe_max_width=50
@@ -342,7 +357,7 @@ lframe_max_width=50
 
 # liste
 lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
-mois = ttk.Combobox(lf1, exportselection=0, width=lframe_max_width)
+mois = ttk.Combobox(lf1, exportselection=0, width=lframe_max_width,font=font_liste_lf,foreground=text_label_frame_color,background='chartreuse', cursor=curseur)
 mois['values']=lmois #ajoute la liste des valeurs a la liste deroulante
 mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
 mois.current(0)
@@ -356,7 +371,7 @@ def load_annee() :
     return(res)
 
 lannees=load_annee()
-annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width)
+annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width,font=font_liste_lf,foreground=text_label_frame_color, cursor=curseur)
 annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
 annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
 if(len(lannees)>0) :
@@ -375,7 +390,7 @@ dfonctions={
     "revenu net par mois" : show_revenu_net_annuel,
     "chiffre d'affaire max par client" : show_CA_par_client
 }
-fonction = ttk.Combobox(lf3, exportselection=0, width=lframe_max_width)
+fonction = ttk.Combobox(lf3, exportselection=0, width=lframe_max_width,font=font_liste_lf,foreground=text_label_frame_color, cursor=curseur)
 fonction['values']=list(dfonctions.keys()) #ajoute la liste des valeurs a la liste deroulante
 fonction['state'] = 'readonly' #empeche d'entrer des valeurs custom
 fonction.current(0)
@@ -422,11 +437,11 @@ def delete_all() :
     if answer :
         subprocess.call([sys.executable, "delete_all.py"])
 
-button_read_file = tk.Button(frame, text='choisir un fichier', command=select_file, bg=button_color)
+button_read_file = tk.Button(frame, text='Ajouter Un Fichier', command=select_file, bg=button_color,fg=button_color_text,relief='groove',font=font_button,borderwidth=5,activebackground=button_color_push, cursor=curseur)
 button_read_file.grid(row=1, column=0)
-button_read_directory = tk.Button(frame, text='choisir un dossier', command=select_directory, bg=button_color)
+button_read_directory = tk.Button(frame, text='Ajouter Un Dossier', command=select_directory, bg=button_color,fg=button_color_text, relief='groove',font=font_button,borderwidth=5,activebackground=button_color_push, cursor=curseur)
 button_read_directory.grid(row=1, column=1)
-button_delete_all = tk.Button(frame, text='supprimer la bdd', command=delete_all, bg=button_color)
+button_delete_all = tk.Button(frame, text='Supprimer La BDD', command=delete_all, bg=button_color,fg=button_color_text, relief='groove',font=font_button,borderwidth=5,activebackground=button_color_push, cursor="pirate")
 button_delete_all.grid(row=1, column=2)
 
 fenetre.mainloop()
