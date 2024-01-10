@@ -316,27 +316,86 @@ fenetre.title("Calculs de chiffre d'affaire")
 fenetre.geometry("1200x300")
 fenetre.minsize(1200, 300)
 fenetre.maxsize(1200, 300)
-fenetre['background']='#7ed6df'
 
-frame=tk.Frame(fenetre)
+# couleurs
+window_color="#7ed6df"
+frame_color="#badc58"
+label_frame_color="#f6e58d"
+button_color="#ff7979"
 
-lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20)
-lf1.grid(row=0, column=0)
-lf1['background']='#f6e58d'
 
-lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20)
-lf2.grid(row=0, column=1)
-lf2['background']='#f6e58d'
+fenetre['background']=window_color
 
-lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20)
-lf3.grid(row=0, column=2)
-lf3['background']='#f6e58d'
-
+frame=tk.Frame(fenetre, bg=frame_color)
 frame.place(relx=0.5, rely=0.5, anchor='center')
 
-lbox_max_width=50
+lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color)
+lf1.grid(row=0, column=0)
+lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color)
+lf2.grid(row=0, column=1)
+lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color)
+lf3.grid(row=0, column=2)
 
-# open button
+lframe_max_width=50
+
+
+
+# liste
+lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
+mois = ttk.Combobox(lf1, exportselection=0, width=lframe_max_width)
+mois['values']=lmois #ajoute la liste des valeurs a la liste deroulante
+mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
+mois.current(0)
+mois.pack()
+
+def load_annee() :
+    res=df_table_commande.copy()
+    res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
+    res["annee"]=res['commande_date_achat'].dt.year
+    res=res["annee"].drop_duplicates().to_list()
+    return(res)
+
+lannees=load_annee()
+annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width)
+annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
+annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
+if(len(lannees)>0) :
+    annee.current(0)
+annee.pack()
+
+# fonctions
+dfonctions={
+    "chiffre d'affaire annuel par atelier" : show_atelier_an,
+    "chiffre d'affaire du mois par atelier" : show_atelier_mois,
+    "chiffre d'affaire annuel par vendeur" : show_vendeur_an,
+    "chiffre d'affaire annuel par atelier et par vendeur" : show_vendeur_atelier_an,
+    "nombre d'ateliers commandes" : show_nbr_atelier_an,
+    "nombre de personne en moyenne par atelier" : show_nbr_atelier_mois,
+    "chiffre d'affaire annuel par mois" : show_CA_annuel,
+    "revenu net par mois" : show_revenu_net_annuel,
+    "chiffre d'affaire max par client" : show_CA_par_client
+}
+fonction = ttk.Combobox(lf3, exportselection=0, width=lframe_max_width)
+fonction['values']=list(dfonctions.keys()) #ajoute la liste des valeurs a la liste deroulante
+fonction['state'] = 'readonly' #empeche d'entrer des valeurs custom
+fonction.current(0)
+fonction.pack()
+
+# script selection
+def selected_item(event):
+    m = int(mois.current())+1
+    a = int(annee.get())
+    f = dfonctions[fonction.get()]
+
+    f(df_activite, m, a, df_table_type_activite)
+
+    plt.show()
+ 
+mois.bind('<<ComboboxSelected>>', selected_item)
+annee.bind('<<ComboboxSelected>>', selected_item)
+fonction.bind('<<ComboboxSelected>>', selected_item)
+
+# boutons
 def select_file():
     filetypes = (
         ('text files', '*.csv'),
@@ -363,70 +422,11 @@ def delete_all() :
     if answer :
         subprocess.call([sys.executable, "delete_all.py"])
 
-
-button_read_file = ttk.Button(frame, text='choisir un fichier', command=select_file)
-button_read_directory = ttk.Button(frame, text='choisir un dossier', command=select_directory)
-button_delete_all = ttk.Button(frame, text='supprimer la bdd', command=delete_all)
-
-f1=tk.Frame(frame)
-f2=tk.Frame(frame)
-f3=tk.Frame(frame)
+button_read_file = tk.Button(frame, text='choisir un fichier', command=select_file, bg=button_color)
 button_read_file.grid(row=1, column=0)
+button_read_directory = tk.Button(frame, text='choisir un dossier', command=select_directory, bg=button_color)
 button_read_directory.grid(row=1, column=1)
+button_delete_all = tk.Button(frame, text='supprimer la bdd', command=delete_all, bg=button_color)
 button_delete_all.grid(row=1, column=2)
-
-# liste
-lmois=["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
-mois = ttk.Combobox(lf1, exportselection=0, width=lbox_max_width)
-mois['values']=lmois #ajoute la liste des valeurs a la liste deroulante
-mois['state'] = 'readonly' #empeche d'entrer des valeurs custom
-mois.current(0)
-mois.pack()
-
-def load_annee() :
-    res=df_table_commande.copy()
-    res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
-    res["annee"]=res['commande_date_achat'].dt.year
-    res=res["annee"].drop_duplicates().to_list()
-    return(res)
-
-lannees=load_annee()
-annee = ttk.Combobox(lf2, exportselection=0, width=lbox_max_width)
-annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
-annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
-if(len(lannees)>0) :
-    annee.current(0)
-annee.pack()
-
-# fonctions
-dfonctions={
-    "chiffre d'affaire annuel par atelier" : show_atelier_an,
-    "chiffre d'affaire du mois par atelier" : show_atelier_mois,
-    "chiffre d'affaire annuel par vendeur" : show_vendeur_an,
-    "chiffre d'affaire annuel par atelier et par vendeur" : show_vendeur_atelier_an,
-    "nombre d'ateliers commandes" : show_nbr_atelier_an,
-    "nombre de personne en moyenne par atelier" : show_nbr_atelier_mois,
-    "chiffre d'affaire annuel par mois" : show_CA_annuel,
-    "revenu net par mois" : show_revenu_net_annuel,
-    "chiffre d'affaire max par client" : show_CA_par_client
-}
-fonction = ttk.Combobox(lf3, exportselection=0, width=lbox_max_width)
-fonction['values']=list(dfonctions.keys()) #ajoute la liste des valeurs a la liste deroulante
-fonction['state'] = 'readonly' #empeche d'entrer des valeurs custom
-fonction.current(0)
-fonction.pack()
-
-def selected_item(event):
-    m = int(mois.current())+1
-    a = int(annee.get())
-    f = dfonctions[fonction.get()]
-
-    f(df_activite, m, a, df_table_type_activite)
-
-    plt.show()
- 
-mois.bind('<<ComboboxSelected>>', selected_item)
-annee.bind('<<ComboboxSelected>>', selected_item)
-fonction.bind('<<ComboboxSelected>>', selected_item)
 
 fenetre.mainloop()
