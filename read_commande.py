@@ -133,7 +133,7 @@ def add_new_commands(df_to_add, connection) :
 
 
 #Main
-conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 folder_filepath=sys.argv[1]
 filepaths_list=[]

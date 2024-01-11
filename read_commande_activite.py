@@ -244,7 +244,7 @@ def add_new_command_activite (df_to_add, connection) :
     return df_res
 
 #Main
-conn=create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 id_type_intervention=get_type_intervention_id(conn)
 id_vendeur_intervention=get_vendeur_intervention_id(conn)

@@ -159,7 +159,7 @@ def CA_par_client(df_entree, an):
 
 
 #Main
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 #le dataframe de chaque table, extrait de la base de donnee
 df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)

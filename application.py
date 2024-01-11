@@ -157,7 +157,7 @@ def CA_par_client(df_entree, an):
 
 
 #Main
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 #le dataframe de chaque table, extrait de la base de donnee
 df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)
@@ -310,6 +310,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 from tkinter.messagebox import askyesno
+
+if not os.path.exists("eviesens.db") :
+    subprocess.call([sys.executable, "create_db.py"])
 
 fenetre = tk.Tk()
 fenetre.title("Calculs de chiffre d'affaire")
