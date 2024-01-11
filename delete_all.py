@@ -1,24 +1,43 @@
-import mysql.connector
+import sqlite3
+from sqlalchemy import create_engine
 
-connection = mysql.connector.connect(
-    host='localhost',
-    database='eviesens',
-    user='root',
-    password='root'
-)
+# conn = create_engine('sqlite:///eviesens.db')
+conn = sqlite3.connect('eviesens.db')
 
-cursor = connection.cursor()
+conn.execute("""
+    DELETE FROM client
+""")
 
-cursor.execute("DELETE FROM commande_activite")
+conn.execute("""
+   DELETE FROM vendeur
+""")
 
-cursor.execute("DELETE FROM commande")
-cursor.execute("DELETE FROM client")
-cursor.execute("DELETE FROM moyen_paiement")
-cursor.execute("DELETE FROM type_structure")
-cursor.execute("DELETE FROM type_transaction")
+conn.execute("""
+   DELETE FROM type_activite
+""")
 
-cursor.execute("DELETE FROM activite")
-cursor.execute("DELETE FROM type_activite")
-cursor.execute("DELETE FROM vendeur")
+conn.execute("""
+   DELETE FROM activite
+""")
 
-connection.commit()
+conn.execute("""
+   DELETE FROM type_structure
+""")
+
+conn.execute("""
+   DELETE FROM type_transaction
+""")
+
+conn.execute("""
+   DELETE FROM moyen_paiement
+""")
+
+conn.execute("""
+   DELETE FROM commande
+""")
+
+conn.execute("""
+   DELETE FROM commande_activite
+""")
+
+conn.commit()

@@ -24,7 +24,7 @@ pd.options.mode.chained_assignment = None
                                     *CA moyen
 '''                
 
-#transforme les numéro de mois en lettres
+#transforme les numéro de mois en nom de mois
 l_mois={
     1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
     7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
@@ -129,7 +129,6 @@ def CA_vendeur_atelier_an(df_entree,an):
     df['chiffre_affaire']= CA(df)
     df=df[['vendeur_nom','activite_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
     df=df.groupby(by=['vendeur_nom','activite_nom']).sum().sort_values(by=['vendeur_nom','activite_nom']) # donne le chiffre d'affaire total par activite
-    ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
     df=df.reset_index()
     return df
 
@@ -169,6 +168,7 @@ def moy_personne_atelier_an(df_entree,an):
 #     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
 #     df=df.rename(columns={"commande_quantite":"nbr_gens"})
 #     return df
+# TODO atelier x10 -> 10 dans quantite
 
 
 # renvoie un tableau avec le CA par mois pour toute l'année
@@ -231,8 +231,7 @@ def CA_par_client(df_entree, an):
 
 
 ### MAIN ###
-
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 #le dataframe de chaque table, extrait de la base de donnee
 df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)

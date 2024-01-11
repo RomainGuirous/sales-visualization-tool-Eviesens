@@ -157,7 +157,7 @@ def CA_par_client(df_entree, an):
 
 
 #Main
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 #le dataframe de chaque table, extrait de la base de donnee
 df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)
@@ -313,6 +313,12 @@ from tkinter.messagebox import askyesno
 import tkinter.font as tkFont
 
 
+if not os.path.exists("eviesens.db") :
+    subprocess.call([sys.executable, "create_db.py"])
+
+if not os.path.exists("eviesens.db") :
+    subprocess.call([sys.executable, "create_db.py"])
+
 fenetre = tk.Tk()
 fenetre.title("Calculs de chiffre d'affaire")
 fenetre.geometry("1800x300")
@@ -328,6 +334,10 @@ font_button = tkFont.Font(family="Arial", size=16, weight="bold", slant="italic"
 curseur="heart"
 
 # couleurs
+window_color="#dff9fb"
+frame_color="#dff9fb"
+label_frame_color="#badc58"
+button_color="#f3a683"
 window_color="#6c5ce7"
 frame_color="#6c5ce7"
 label_frame_color="#d63031"
@@ -342,6 +352,8 @@ fenetre['background']=window_color
 
 frame=tk.Frame(fenetre, bg=frame_color, cursor=curseur)
 frame.place(relx=0.5, rely=0.5, anchor='center')
+
+
 
 lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
 lf1.grid(row=0, column=0)
@@ -364,18 +376,18 @@ mois.current(0)
 mois.pack()
 
 def load_annee() :
-    res=df_table_commande.copy()
+    res=pd.read_sql_query('SELECT * FROM commande',conn)
     res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
     res["annee"]=res['commande_date_achat'].dt.year
     res=res["annee"].drop_duplicates().to_list()
-    return(res)
+    return res
 
+annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width, values=load_annee, postcommand=lambda: annee.configure(values=load_annee()))
 lannees=load_annee()
 annee = ttk.Combobox(lf2, exportselection=0, width=lframe_max_width,font=font_liste_lf,foreground=text_label_frame_color, cursor=curseur)
 annee['values']=lannees #ajoute la liste des valeurs a la liste deroulante
 annee['state'] = 'readonly' #empeche d'entrer des valeurs custom
-if(len(lannees)>0) :
-    annee.current(0)
+
 annee.pack()
 
 # fonctions
@@ -398,13 +410,15 @@ fonction.pack()
 
 # script selection
 def selected_item(event):
-    m = int(mois.current())+1
-    a = int(annee.get())
-    f = dfonctions[fonction.get()]
+    try:
+        m = int(mois.current())+1
+        a = int(annee.get())
+        f = dfonctions[fonction.get()]
+        f(df_activite, m, a, df_table_type_activite)
+        plt.show()
+    except ValueError as ve:
+        pass
 
-    f(df_activite, m, a, df_table_type_activite)
-
-    plt.show()
  
 mois.bind('<<ComboboxSelected>>', selected_item)
 annee.bind('<<ComboboxSelected>>', selected_item)

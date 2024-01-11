@@ -4,6 +4,7 @@ import os
 import sys
 from sqlalchemy import create_engine
 import re
+import sqlite3
 pd.set_option('display.max_rows', 500)
 
 
@@ -134,7 +135,7 @@ def add_new_activite(df_to_add, connection) :
     return df_res
 
 #Main
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
+conn = create_engine('sqlite:///eviesens.db')
 
 folder_filepath=sys.argv[1]
 filepaths_list=[]
