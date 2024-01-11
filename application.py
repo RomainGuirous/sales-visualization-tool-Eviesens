@@ -20,46 +20,28 @@ df_activite=dbc.get_data()
 
 fenetre = tk.Tk()
 fenetre.title("Calculs de chiffre d'affaire")
-fenetre.geometry("1800x300")
-fenetre.minsize(1800, 300)
-fenetre.maxsize(1800, 300)
-
-#police ecriture
-font_titre_lf = tkFont.Font(family="Calibri", size=16, weight="bold", slant="italic",underline=True)
-font_liste_lf = tkFont.Font(family="Mongolian Baiti", size=12, weight="bold", slant="roman")
-font_button = tkFont.Font(family="Arial", size=16, weight="bold", slant="italic",underline=False)
-
-#curseur
-curseur="heart"
+fenetre.geometry("1200x300")
+fenetre.minsize(1200, 300)
+fenetre.maxsize(1200, 300)
 
 # couleurs
 window_color="#dff9fb"
 frame_color="#dff9fb"
 label_frame_color="#badc58"
 button_color="#f3a683"
-window_color="#6c5ce7"
-frame_color="#6c5ce7"
-label_frame_color="#d63031"
-button_color="#a29bfe"
-button_color_text='#2d3436'
-button_color_push='#74b9ff'
-text_label_frame_color='#2d3436'
-titre_label_frame_color='#2d3436'
 
 
 fenetre['background']=window_color
 
-frame=tk.Frame(fenetre, bg=frame_color, cursor=curseur)
+frame=tk.Frame(fenetre, bg=frame_color)
 frame.place(relx=0.5, rely=0.5, anchor='center')
 
 
-
-lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
+lf1 = tk.LabelFrame(frame, text="Mois", padx=20, pady=20, bg=label_frame_color)
 lf1.grid(row=0, column=0)
-# lf1.configure(font=font1)
-lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
+lf2 = tk.LabelFrame(frame, text="Annee", padx=20, pady=20, bg=label_frame_color)
 lf2.grid(row=0, column=1)
-lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color,font=font_titre_lf, cursor=curseur,foreground=titre_label_frame_color)
+lf3 = tk.LabelFrame(frame, text="Fonction", padx=20, pady=20, bg=label_frame_color)
 lf3.grid(row=0, column=2)
 
 lframe_max_width=50
