@@ -1,35 +1,28 @@
 import pandas as pd
-import numpy as np
-import os
 from sqlalchemy import create_engine
-import re
-pd.set_option('display.max_rows', 500)
-pd.options.mode.chained_assignment = None
-# pour 1 atelier donné :
-# -combien de  personnes en moyenne
-# -quel chiffre d'affaire en moyenne par an/mois
 
-# pour 1 soin donné : quel chiffre d'affaire moyen par mois (Ventes Eviesens, lebienetre.fr et SARL edito)
-
-# par mois, combien d'interventions extérieures et quel chiffre d'affaire moyen ?
-
-# quel est le total de chiffre d'affaire par mois/an obtenu par lebienetre.fr et SARL edito
-
-#reformulation kpi:
-''' -> activite_nom:                *combien de personnes en moyenne (combien d'achat?)
-                                    *CA par mois, par an
-                                    *quelle part de Eviens et SARL Edito
-    ->vendeur_nom:                  *CA par mois,par an
-    ->interventions extérieures:    *nombre
-                                    *CA moyen
-'''                
-
-#transforme les numéro de mois en lettres
+#transforme les numéro de mois en nom de mois
 l_mois={
     1 : "janvier" , 2 : "fevrier" , 3 : "mars" , 4 : "avril" , 5 : "mai" , 6 : "juin",
     7 : "juillet" , 8 : "aout" , 9 : "septembre" , 10 : "octobre" , 11 : "novembre" , 12 : "decembre"
-    }
+}
 
+
+
+# modèle de comment est calculé le CA
+def CA(df_entree):
+    df=df_entree.copy()
+    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
+    return df['chiffre_affaire']
+
+# modèle de comment est calculé le revenu net
+def revenu_net(df_entree):
+    df=df_entree.copy()
+    df['revenu_net']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission'] - df['commande_rsi']
+    return df['revenu_net']
+
+
+# fonctions de selection
 #permet d'obtenir les achats dans un mois,année donnés (rentrer mois et an en int)
 def achat_mois(df_entree,mois,an):
     df=df_entree.copy()
@@ -77,20 +70,8 @@ def achat_an_perception(df_entree, an):
 
 
 
-# modèle de comment est calculé le CA
-def CA(df_entree):
-    df=df_entree.copy()
-    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
-    return df['chiffre_affaire']
 
-# modèle de comment est calculé le revenu net
-def revenu_net(df_entree):
-    df=df_entree.copy()
-    df['revenu_net']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission'] - df['commande_rsi']
-    return df['revenu_net']
-
-
-
+#kpi
 #donne le chiffre d'affaire par an de chaque intitulé
 def CA_atelier_an(df_entree,an): #on donne l'annee en int
     df=df_entree.copy()
@@ -111,7 +92,6 @@ def CA_atelier_mois(df_entree,mois,an):
     df=df.reset_index()
     return df
 
-
 #donne le chiffre d'affaire par an de chaque vendeur
 def CA_vendeur_an(df_entree,an):
     df=df_entree.copy()
@@ -129,10 +109,8 @@ def CA_vendeur_atelier_an(df_entree,an):
     df['chiffre_affaire']= CA(df)
     df=df[['vendeur_nom','activite_nom','chiffre_affaire']] #on affiche juste vendeur, nom et CA pour clarté
     df=df.groupby(by=['vendeur_nom','activite_nom']).sum().sort_values(by=['vendeur_nom','activite_nom']) # donne le chiffre d'affaire total par activite
-    ### /!\/!\/!\ CHOISIR COMMENT ORDONNER GROUP BY ET SORT VALUES /!\/!\/!\ ###
     df=df.reset_index()
     return df
-
 
 #donne le nombre d'atelier vendus par an
 def nbr_atelier_an(df_entree,an, df_all_activite):
@@ -146,7 +124,6 @@ def nbr_atelier_an(df_entree,an, df_all_activite):
     df2=df2.fillna(0)
     df2['nbr_ateliers']=df2['nbr_ateliers'].astype('Int32')
     return df2
-
 
 #donne le nombre de personnes présentes dans chaque atelier par mois
 def moy_personne_atelier_an(df_entree,an):
@@ -169,7 +146,7 @@ def moy_personne_atelier_an(df_entree,an):
 #     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
 #     df=df.rename(columns={"commande_quantite":"nbr_gens"})
 #     return df
-
+# TODO atelier x10 -> 10 dans quantite
 
 # renvoie un tableau avec le CA par mois pour toute l'année
 def CA_annuel(df_entree,an):
@@ -192,7 +169,6 @@ def revenu_net_annuel(df_entree,an):
     df=df.groupby(by=['mois']).sum().sort_values(by=['mois']).reset_index()
     df['mois']=df['mois'].replace(l_mois)
     return df
-
 
 #renvoie un tableau avec le CA annuel pour chaque année
 def CA_par_ans(df_entree):
@@ -223,71 +199,3 @@ def CA_par_client(df_entree, an):
     df=df.groupby(["client_id", "client_prenom", "client_nom"],as_index=False).sum().sort_values(by=['chiffre_affaire'], ascending=False)
     df=df[["client_prenom", "client_nom",'chiffre_affaire']]
     return df
-    # df = df.reset_index(level="client_id", drop=True) # le 3-tuple ["client_id", "client_prenom", "client_nom"] forme l'index, cette ligne permet d'en supprimer une partie
-
-
-
-
-
-
-### MAIN ###
-
-conn= create_engine('mysql+mysqlconnector://root:root@localhost:3306/eviesens')
-
-#le dataframe de chaque table, extrait de la base de donnee
-df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)
-df_table_type_transaction= pd.read_sql_query('SELECT * FROM type_transaction',conn)
-df_table_type_structure= pd.read_sql_query('SELECT * FROM type_structure',conn)
-df_table_moyen_paiement= pd.read_sql_query('SELECT * FROM moyen_paiement',conn)
-df_table_type_activite= pd.read_sql_query('SELECT * FROM type_activite',conn)
-df_table_commande= pd.read_sql_query('SELECT * FROM commande',conn)
-df_table_commande_activite= pd.read_sql_query('SELECT * FROM commande_activite',conn)
-df_table_activite= pd.read_sql_query('SELECT * FROM activite',conn)
-df_table_client= pd.read_sql_query('SELECT * FROM client',conn)
-
-
-# jointure des 4 tables type_activite ,commande, activite, commande_activite et vendeur(par la gauche pour garder affiché tous les noms d'activite)
-df_activite=df_table_type_activite.join(df_table_activite.set_index('type_activite_id'),on=('type_activite_id'), how="inner")
-df_activite=df_activite.join(df_table_commande_activite.set_index('activite_id'),on=('activite_id'), how="inner")
-df_activite=df_activite.join(df_table_commande.set_index('commande_id'),on=('commande_id'), how="inner")
-df_activite=df_activite.join(df_table_vendeur.set_index('vendeur_id'),on=('vendeur_id'),how='inner') # on transforme df_activite pour incorporer vendeur_nom
-df_activite=df_activite.join(df_table_type_transaction.set_index('type_transaction_id'),on=('type_transaction_id'), how="inner")
-df_activite=df_activite.join(df_table_client.set_index('client_id'),on=('client_id'), how="inner")
-
-#on transforme les prix des lignes Remboursement en négatif
-df_activite.loc[df_activite['type_transaction_nom'] == "Remboursement",'activite_prix']=df_activite[df_activite['type_transaction_nom'] == "Remboursement"]['activite_prix'].map( lambda x : -x)
-#loc => 1er argument: ligne (ici filtre) 2eme argument:colonne
-
-
-### CHIFFRE D'AFFAIRE ###
-##  CA PAR ATELIER / AN
-# print(CA_atelier_an(df_activite,2023))
-
-# ## CA PAR ATELIER / MOIS
-# print(CA_atelier_mois(df_activite,1,2023)) #mois,annee à adapter
-# for i in range(1,13):
-#     print(CA_atelier_mois(df_activite,i,2023))
-
-# ## CA / VENDEUR
-# print(CA_vendeur_an(df_activite,2023))
-
-# ## CA / (VENDEUR, ATELIER)
-# print(CA_vendeur_atelier_an(df_activite,2023))
-
-# ## CA / CLIENT / AN
-# print(CA_par_client(df_activite, 2023))
-
-# ## CA / AN (TABLEAU CHAQUE MOIS)
-# print(CA_annuel(df_activite,2023))
-
-# ## REVENU NET / AN (TABLEAU CHAQUE MOIS)
-# print(revenu_net_annuel(df_activite,2023))
-
-# ## CA ANNUEL / ANS
-# print(CA_par_ans(df_activite))
-
-# ## REVENU NET ANNUEL / ANS
-# print(revenu_net_par_ans(df_activite))
-
-# ## MOYENNE PERSONNE ATELIER/AN
-# print(moy_personne_atelier_an(df_activite,2023))
