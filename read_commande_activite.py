@@ -24,19 +24,19 @@ def select_commande(df) :
     df_commande = df_commande[df_commande["Date d'achat"].notna()]
 
     df_commande=df_commande.astype({'Déplacement': 'string', 'Tarif': 'string', 'Reduction': 'string', 'Commission': 'string', 'RSI': 'string'})
-    df_commande["Déplacement"]=df_commande["Déplacement"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Déplacement"]=df_commande["Déplacement"].replace(regex='[^-,.0-9]', value=np.nan)
     df_commande["Déplacement"]=df_commande["Déplacement"].str.replace(',', '.', regex=True) # remplace tout ce qui n'est pas un chiffre, un . ou une , par Nan
 
-    df_commande["Tarif"]=df_commande["Tarif"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Tarif"]=df_commande["Tarif"].replace(regex='[^-,.0-9]', value=np.nan)
     df_commande["Tarif"]=df_commande["Tarif"].str.replace(',', '.', regex=True)
 
-    df_commande["Reduction"]=df_commande["Reduction"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Reduction"]=df_commande["Reduction"].replace(regex='[^-,.0-9]', value=np.nan)
     df_commande["Reduction"]=df_commande["Reduction"].str.replace(',', '.', regex=True)
     
-    df_commande["Commission"]=df_commande["Commission"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["Commission"]=df_commande["Commission"].replace(regex='[^-,.0-9]', value=np.nan)
     df_commande["Commission"]=df_commande["Commission"].str.replace(',', '.', regex=True)
 
-    df_commande["RSI"]=df_commande["RSI"].replace(regex='[^,.0-9]', value=np.nan)
+    df_commande["RSI"]=df_commande["RSI"].replace(regex='[^-,.0-9]', value=np.nan)
     df_commande["RSI"]=df_commande["RSI"].str.replace(',', '.', regex=True)
     #on selectionne les colonnes utiles pour nous par leur nom dans le DF    df_commande = df_commande.rename(columns={'Structure': 'type_structure_nom', 'Transaction': 'type_transaction_nom', 'Moyen de paiement':'moyen_paiement_nom', "Nom":'client_nom', "Prénom":'client_prenom',"Date d'achat":'commande_date_achat'})
     df_commande = df_commande[['Date soin', 'Nom' ,'Prénom', 'Type', 'Vendeur', 'Intitulé','Déplacement', 'Quantité', 'Tarif', 

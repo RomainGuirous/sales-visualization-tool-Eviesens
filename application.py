@@ -2,6 +2,7 @@ import pandas as pd
 pd.set_option('display.max_rows', 500)
 import os
 import sys
+import shutil
 import subprocess
 from sqlalchemy import create_engine
 import database_connection as dbc
@@ -113,6 +114,24 @@ def select_directory():
         fenetre.destroy()
         subprocess.call([sys.executable, "application.py"])
 
+def select_excel():
+    filetypes = (
+        ('text files', '*.xlsx'),
+        ('All files', '*.*')
+    )
+
+    filename = fd.askopenfile(
+        title='choisir un fichier',
+        initialdir=os.getcwd(),
+        filetypes=filetypes)
+    if filename :
+        subprocess.call([sys.executable, "create_temp_folder.py", filename.name])
+        subprocess.call([sys.executable, "main.py", "temp_csv"])
+        if os.path.isdir("temp_csv"):
+            shutil.rmtree("temp_csv")
+        fenetre.destroy()
+        subprocess.call([sys.executable, "application.py"])
+
 def delete_all() :
     answer = askyesno(title='confirmation',
                     message='voulez-vous supprimer les données ?')
@@ -136,8 +155,9 @@ menubar = tk.Menu(fenetre)
 
 import_menu = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="importer", menu=import_menu)
-import_menu.add_command(label="ajouter un fichier", command=select_file)
-import_menu.add_command(label="ajouter un dossier", command=select_directory)
+import_menu.add_command(label="ajouter un fichier csv", command=select_file)
+import_menu.add_command(label="ajouter un dossier de csv", command=select_directory)
+import_menu.add_command(label="ajouter un fichier xlsx", command=select_excel)
 
 option_menu = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="options", menu=option_menu)
