@@ -12,13 +12,13 @@ l_mois={
 # modèle de comment est calculé le CA
 def CA(df_entree):
     df=df_entree.copy()
-    df['chiffre_affaire']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission']
+    df['chiffre_affaire']=(df['activite_prix'] - df['commande_reduction'] - df['commande_commission']) * df['commande_quantite'] + df['commande_deplacement']
     return df['chiffre_affaire']
 
 # modèle de comment est calculé le revenu net
 def revenu_net(df_entree):
     df=df_entree.copy()
-    df['revenu_net']=df['activite_prix'] * df['commande_quantite'] + df['commande_deplacement'] - df['commande_reduction'] - df['commande_commission'] - df['commande_rsi']
+    df['revenu_net']=(df['activite_prix'] - df['commande_reduction'] - df['commande_commission']) * df['commande_quantite'] + df['commande_deplacement'] - df['commande_rsi']
     return df['revenu_net']
 
 
@@ -137,16 +137,27 @@ def moy_personne_atelier_an(df_entree,an):
     df=df.rename(columns={"commande_quantite":"nbr_gens"})
     return df
 
-#est-ce utile étant donné que c'est identique à nbr_atelier_an?
 #donne le nombre de personnes présentes dans chaque atelier par an
-# def nbr_personne_atelier_an(df_entree,an):
-#     df=df_entree.copy()
-#     df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
-#     df=df[['activite_nom','commande_quantite']]
-#     df=df.groupby(by=['activite_nom']).sum().sort_values(by=['commande_quantite'], ascending=False).reset_index()
-#     df=df.rename(columns={"commande_quantite":"nbr_gens"})
-#     return df
-# TODO atelier x10 -> 10 dans quantite
+def nbr_personne_atelier_an(df_entree,an):
+    df=df_entree.copy()
+    df=achat_an_soin(df,an)# on trie pour obtenir les dates d'achat d'un seul mois (avec l'année correspondante)
+    #on multiplie la quantité pour les achats multi-séances
+    df.loc[df['activite_nom'] == "Formule 10 Yin Yoga R",'commande_quantite']=df[df['activite_nom'] == "Formule 10 Yin Yoga R"]['commande_quantite'].map( lambda x : 10*x)
+    df.loc[df['activite_nom'] == "Formule 10 YinYoga R en 3x",'commande_quantite']=df[df['activite_nom'] == "Formule 10 YinYoga R en 3x"]['commande_quantite'].map( lambda x : 10*x)
+    df.loc[df['activite_nom'] == "Forfait Massage pour nourrissons 4 séances (creche)",'commande_quantite']=df[df['activite_nom'] == "Forfait Massage pour nourrissons 4 séances (creche)"]['commande_quantite'].map( lambda x : 4*x)
+    df.loc[df['activite_nom'] == "Forfait Mini-Misp 3 séances (creche)",'commande_quantite']=df[df['activite_nom'] == "Forfait Mini-Misp 3 séances (creche)"]['commande_quantite'].map( lambda x : 3*x)
+    df.loc[df['activite_nom'] == "Éveil sonore et musical 3 séances (creche)",'commande_quantite']=df[df['activite_nom'] == "Éveil sonore et musical 3 séances (creche)"]['commande_quantite'].map( lambda x : 3*x)
+    df.loc[df['activite_nom'] == "Programme 10 séances (creche)",'commande_quantite']=df[df['activite_nom'] == "Programme 10 séances (creche)"]['commande_quantite'].map( lambda x : 10*x)
+    df.loc[df['activite_nom'] == "Massage du corps entier de bébé : 4 séances ludiques et progressives",'commande_quantite']=df[df['activite_nom'] == "Massage du corps entier de bébé : 4 séances ludiques et progressives"]['commande_quantite'].map( lambda x : 4*x)
+    df.loc[df['activite_nom'] == "Reliance 10 séances",'commande_quantite']=df[df['activite_nom'] == "Reliance 10 séances"]['commande_quantite'].map( lambda x : 10*x)
+    df.loc[df['activite_nom'] == "Magic Sound Wave 5 séances",'commande_quantite']=df[df['activite_nom'] == "Magic Sound Wave 5 séances"]['commande_quantite'].map( lambda x : 5*x)
+    #si remboursement, la quantité devient négative
+    df.loc[df['type_transaction_nom'] == "Remboursement",'commande_quantite']=df[df['type_transaction_nom'] == "Remboursement"]['commande_quantite'].map( lambda x : -x)
+    df=df[['activite_nom','commande_quantite']]
+    print(df)
+    df=df.groupby(by=['activite_nom']).sum().sort_values(by=['activite_nom'], ascending=False).reset_index()
+    df=df.rename(columns={"commande_quantite":"nbr_gens"})
+    return df
 
 # renvoie un tableau avec le CA par mois pour toute l'année
 def CA_annuel(df_entree,an):
