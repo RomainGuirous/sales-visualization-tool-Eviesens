@@ -4,9 +4,6 @@ import os
 import sys
 from sqlalchemy import create_engine
 import re
-import sqlite3
-pd.set_option('display.max_rows', 500)
-
 
 # activite
 #a partir du fichier csv, selectionne les colonnes et les lignes correspondant au tableau activite
@@ -135,47 +132,48 @@ def add_new_activite(df_to_add, connection) :
     return df_res
 
 #Main
-conn = create_engine('sqlite:///eviesens.db')
+def read_activite(folder_filepath) :
+    conn = create_engine('sqlite:///eviesens.db')
 
-folder_filepath=sys.argv[1]
-filepaths_list=[]
-filepaths=[]
-if os.path.isdir(folder_filepath) :
-    filepaths_list=os.listdir(folder_filepath)
-    for i in range(len(filepaths_list)) :
-        if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) & is_valid_filename(filepaths_list[i]) : # ne lit que les fichiers contenant un mois et une annee
-            filepaths.append(folder_filepath+"/"+filepaths_list[i])
-elif os.path.isfile(folder_filepath) :
-    filepaths=[folder_filepath]
+    # folder_filepath=sys.argv[1]
+    filepaths_list=[]
+    filepaths=[]
+    if os.path.isdir(folder_filepath) :
+        filepaths_list=os.listdir(folder_filepath)
+        for i in range(len(filepaths_list)) :
+            if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) & is_valid_filename(filepaths_list[i]) : # ne lit que les fichiers contenant un mois et une annee
+                filepaths.append(folder_filepath+"/"+filepaths_list[i])
+    elif os.path.isfile(folder_filepath) :
+        filepaths=[folder_filepath]
 
-for filepath in filepaths :
-    print(filepath)
-    df=pd.read_csv(filepath)
-    df_activite=select_activite(df)
-    
-    # table vendeur
-    before_dico_vendeur_db=database_to_dict("vendeur",conn)#dictionnaires des vendeurs avant l'insertion
-    df_vendeur=df_activite['vendeur_nom'].drop_duplicates() #on supprime doublons -> Nan
-    df_vendeur=df_vendeur.dropna() #on supprime Nan
-    df_vendeur=drop_existing_name(before_dico_vendeur_db, df_vendeur) #supprime les noms deja existants en bdd
-    df_to_database(df_vendeur,"vendeur",conn)
-    after_dico_vendeur_db=database_to_dict("vendeur",conn) #dictionnaires des vendeurs / types activites apres l'insertion
-    df_activite["vendeur_nom"]= df_activite["vendeur_nom"].replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
-    
-    #table type_activite
-    add_type_act(df_activite, conn)
-    df_activite=get_type_act_id(df_activite, conn)
-    df_activite=df_activite.drop(["type_activite_nom", "activite_nom"], axis=1)
+    for filepath in filepaths :
+        print(filepath)
+        df=pd.read_csv(filepath)
+        df_activite=select_activite(df)
+        
+        # table vendeur
+        before_dico_vendeur_db=database_to_dict("vendeur",conn)#dictionnaires des vendeurs avant l'insertion
+        df_vendeur=df_activite['vendeur_nom'].drop_duplicates() #on supprime doublons -> Nan
+        df_vendeur=df_vendeur.dropna() #on supprime Nan
+        df_vendeur=drop_existing_name(before_dico_vendeur_db, df_vendeur) #supprime les noms deja existants en bdd
+        df_to_database(df_vendeur,"vendeur",conn)
+        after_dico_vendeur_db=database_to_dict("vendeur",conn) #dictionnaires des vendeurs / types activites apres l'insertion
+        df_activite["vendeur_nom"]= df_activite["vendeur_nom"].replace(after_dico_vendeur_db) #on transforme noms de vendeur en leur id
+        
+        #table type_activite
+        add_type_act(df_activite, conn)
+        df_activite=get_type_act_id(df_activite, conn)
+        df_activite=df_activite.drop(["type_activite_nom", "activite_nom"], axis=1)
 
 
 
-    #on change les nom de col pour correspondre à la table de la BDD
-    df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id','type_activite_nom':'type_activite_id'})
+        #on change les nom de col pour correspondre à la table de la BDD
+        df_activite = df_activite.rename(columns={'vendeur_nom': 'vendeur_id','type_activite_nom':'type_activite_id'})
 
-    #ajoute la colonne mois correspondante au mois trouve dans le nom de fichier
-    filename=os.path.basename(filepath)
-    mois, annee = str_to_month_year(filename)
-    df_activite["activite_mois"]=annee+"-"+mois+"-01" #YYYY/MM/dd
+        #ajoute la colonne mois correspondante au mois trouve dans le nom de fichier
+        filename=os.path.basename(filepath)
+        mois, annee = str_to_month_year(filename)
+        df_activite["activite_mois"]=annee+"-"+mois+"-01" #YYYY/MM/dd
 
-    # insert le tableau activite dans la bdd
-    add_new_activite(df_activite, conn)
+        # insert le tableau activite dans la bdd
+        add_new_activite(df_activite, conn)

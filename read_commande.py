@@ -133,65 +133,66 @@ def add_new_commands(df_to_add, connection) :
 
 
 #Main
-conn = create_engine('sqlite:///eviesens.db')
+def read_commande(folder_filepath) :
+    conn = create_engine('sqlite:///eviesens.db')
 
-folder_filepath=sys.argv[1]
-filepaths_list=[]
-filepaths=[]
-if os.path.isdir(folder_filepath) :
-    filepaths_list=os.listdir(folder_filepath)
-    for i in range(len(filepaths_list)) :
-        if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) :
-            filepaths.append(folder_filepath+"/"+filepaths_list[i])
-elif os.path.isfile(folder_filepath) :
-    filepaths=[folder_filepath]
+    # folder_filepath=sys.argv[1]
+    filepaths_list=[]
+    filepaths=[]
+    if os.path.isdir(folder_filepath) :
+        filepaths_list=os.listdir(folder_filepath)
+        for i in range(len(filepaths_list)) :
+            if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) :
+                filepaths.append(folder_filepath+"/"+filepaths_list[i])
+    elif os.path.isfile(folder_filepath) :
+        filepaths=[folder_filepath]
 
-for filepath in filepaths :
-    print(filepath)
-    df=pd.read_csv(filepath)
-    df_commande=select_commande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
-    
-    # table type_structure
-    before_dico_type_structure_db=database_to_dict("type_structure",conn) # recupere la liste des structures existantes en bdd
-    df_type_structure=df_commande['type_structure_nom'].drop_duplicates() # suppression des doublons du fichier en cours
-    df_type_structure=df_type_structure.dropna() #suppression des Nan
-    df_type_structure=drop_existing_name(before_dico_type_structure_db, df_type_structure) # suppression des noms deja existants en bdd
-    df_to_database(df_type_structure,"type_structure",conn) # insertion des nouveaux noms de structure en bdd
-    after_dico_type_structure_db=database_to_dict("type_structure",conn) # dictionnaires des structures apres l'insertion
-    df_commande["type_structure_nom"] = df_commande["type_structure_nom"].replace(after_dico_type_structure_db) # remplacement des noms de structure locals par leur id
-
-
-    # meme chose avec la table type_transaction
-    before_dico_type_transaction_db=database_to_dict("type_transaction",conn)
-    df_type_transaction=df_commande['type_transaction_nom'].drop_duplicates() 
-    df_type_transaction=df_type_transaction.dropna()
-    df_type_transaction=drop_existing_name(before_dico_type_transaction_db, df_type_transaction)
-    df_to_database(df_type_transaction,"type_transaction",conn)
-    after_dico_type_transaction_db=database_to_dict("type_transaction",conn)
-    df_commande["type_transaction_nom"] = df_commande["type_transaction_nom"].replace(after_dico_type_transaction_db)
+    for filepath in filepaths :
+        print(filepath)
+        df=pd.read_csv(filepath)
+        df_commande=select_commande(df) #on récupère un dataframe par mois avec les colonnes et les lignes qui nous intéressent
+        
+        # table type_structure
+        before_dico_type_structure_db=database_to_dict("type_structure",conn) # recupere la liste des structures existantes en bdd
+        df_type_structure=df_commande['type_structure_nom'].drop_duplicates() # suppression des doublons du fichier en cours
+        df_type_structure=df_type_structure.dropna() #suppression des Nan
+        df_type_structure=drop_existing_name(before_dico_type_structure_db, df_type_structure) # suppression des noms deja existants en bdd
+        df_to_database(df_type_structure,"type_structure",conn) # insertion des nouveaux noms de structure en bdd
+        after_dico_type_structure_db=database_to_dict("type_structure",conn) # dictionnaires des structures apres l'insertion
+        df_commande["type_structure_nom"] = df_commande["type_structure_nom"].replace(after_dico_type_structure_db) # remplacement des noms de structure locals par leur id
 
 
-    # meme chose avec la table moyen_paiement
-    before_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
-    df_moyen_paiement=df_commande['moyen_paiement_nom'].drop_duplicates()
-    df_moyen_paiement=df_moyen_paiement.dropna()
-    df_moyen_paiement=drop_existing_name(before_dico_moyen_paiement_db, df_moyen_paiement)
-    df_to_database(df_moyen_paiement,"moyen_paiement",conn)
-    after_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
-    df_commande["moyen_paiement_nom"] = df_commande["moyen_paiement_nom"].replace(after_dico_moyen_paiement_db)
+        # meme chose avec la table type_transaction
+        before_dico_type_transaction_db=database_to_dict("type_transaction",conn)
+        df_type_transaction=df_commande['type_transaction_nom'].drop_duplicates() 
+        df_type_transaction=df_type_transaction.dropna()
+        df_type_transaction=drop_existing_name(before_dico_type_transaction_db, df_type_transaction)
+        df_to_database(df_type_transaction,"type_transaction",conn)
+        after_dico_type_transaction_db=database_to_dict("type_transaction",conn)
+        df_commande["type_transaction_nom"] = df_commande["type_transaction_nom"].replace(after_dico_type_transaction_db)
 
 
-    # table clients
-    add_new_clients(df_commande, conn) # ajoute les client du fichier qui n'existent pas dans la bdd
-    df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', conn) # recupere la liste des clients de la bdd
-    df_commande=get_clients_id(df_commande, df_from_db) # compare chaque client du fichier avec ceux de la bdd et leur associe leur id en rajoutant client_id au dataframe
-    df_commande=df_commande.drop(["client_nom", "client_prenom"], axis=1) # retire les colonnes client_nom et client_prenom qui n'apparaissent pas en bdd
+        # meme chose avec la table moyen_paiement
+        before_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
+        df_moyen_paiement=df_commande['moyen_paiement_nom'].drop_duplicates()
+        df_moyen_paiement=df_moyen_paiement.dropna()
+        df_moyen_paiement=drop_existing_name(before_dico_moyen_paiement_db, df_moyen_paiement)
+        df_to_database(df_moyen_paiement,"moyen_paiement",conn)
+        after_dico_moyen_paiement_db=database_to_dict("moyen_paiement",conn)
+        df_commande["moyen_paiement_nom"] = df_commande["moyen_paiement_nom"].replace(after_dico_moyen_paiement_db)
 
 
-    # change les nom de col pour correspondre à la table de la BDD
-    df_commande = df_commande.rename(columns={'type_structure_nom': 'type_structure_id', 'type_transaction_nom': 'type_transaction_id','moyen_paiement_nom':'moyen_paiement_id'})
+        # table clients
+        add_new_clients(df_commande, conn) # ajoute les client du fichier qui n'existent pas dans la bdd
+        df_from_db = pd.read_sql_query('SELECT client_id, client_nom, client_prenom FROM client', conn) # recupere la liste des clients de la bdd
+        df_commande=get_clients_id(df_commande, df_from_db) # compare chaque client du fichier avec ceux de la bdd et leur associe leur id en rajoutant client_id au dataframe
+        df_commande=df_commande.drop(["client_nom", "client_prenom"], axis=1) # retire les colonnes client_nom et client_prenom qui n'apparaissent pas en bdd
 
-    # change le format de dates pour correspondre aux normes sql : de JJ/MM/AAAA -> AAAA-MM-JJ
-    df_commande['commande_date_achat']=df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x)) #on change "/" en "-" et on inverse jours et ans
 
-    add_new_commands(df_commande, conn) # ajoute les commandes une par une dans la bdd
+        # change les nom de col pour correspondre à la table de la BDD
+        df_commande = df_commande.rename(columns={'type_structure_nom': 'type_structure_id', 'type_transaction_nom': 'type_transaction_id','moyen_paiement_nom':'moyen_paiement_id'})
+
+        # change le format de dates pour correspondre aux normes sql : de JJ/MM/AAAA -> AAAA-MM-JJ
+        df_commande['commande_date_achat']=df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x)) #on change "/" en "-" et on inverse jours et ans
+
+        add_new_commands(df_commande, conn) # ajoute les commandes une par une dans la bdd
