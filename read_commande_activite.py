@@ -5,6 +5,8 @@ import sys
 from sqlalchemy import create_engine
 import re
 pd.set_option('display.max_rows', 500)
+from sqlalchemy import exc
+from sqlalchemy.orm import Session
 
 # commande
 def select_commande(df) :
@@ -240,41 +242,46 @@ def add_new_command_activite (df_to_add, connection) :
     df_res = df_to_add.copy() # liste des commandes a rajouter en cours
     for i in df_res.index :
         command_activite_to_add=df_res.loc[[i]] #on recupere la ligne de la commande a rajouter
-        command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
+        with Session(connection) as session:
+            try :
+                command_activite_to_add.to_sql("commande_activite", con=connection, index=False, if_exists='append') # on ajoute la commande a la bdd
+            except exc.IntegrityError as e:
+                session.rollback()
     return df_res
 
 #Main
-conn = create_engine('sqlite:///eviesens.db')
+def read_commande_activite(folder_filepath) :
+    conn = create_engine('sqlite:///eviesens.db')
 
-id_type_intervention=get_type_intervention_id(conn)
-id_vendeur_intervention=get_vendeur_intervention_id(conn)
+    id_type_intervention=get_type_intervention_id(conn)
+    id_vendeur_intervention=get_vendeur_intervention_id(conn)
 
-folder_filepath=sys.argv[1]
-filepaths_list=[]
-filepaths=[]
-if os.path.isdir(folder_filepath) :
-    filepaths_list=os.listdir(folder_filepath)
-    for i in range(len(filepaths_list)) :
-        if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) :
-            filepaths.append(folder_filepath+"/"+filepaths_list[i])
-elif os.path.isfile(folder_filepath) :
-    filepaths=[folder_filepath]
+    # folder_filepath=sys.argv[1]
+    filepaths_list=[]
+    filepaths=[]
+    if os.path.isdir(folder_filepath) :
+        filepaths_list=os.listdir(folder_filepath)
+        for i in range(len(filepaths_list)) :
+            if os.path.isfile(folder_filepath+"/"+filepaths_list[i]) :
+                filepaths.append(folder_filepath+"/"+filepaths_list[i])
+    elif os.path.isfile(folder_filepath) :
+        filepaths=[folder_filepath]
 
-for filepath in filepaths :
-    print(filepath)
-    df=pd.read_csv(filepath)
-    df_commande=select_commande(df)
-    df_commande['commande_date_soin'] = df_commande['commande_date_soin'].transform(lambda x: excel_to_sql_date(x))
-    df_commande['commande_date_achat'] = df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x))
-    df_commande['commande_date_encaissement'] = df_commande['commande_date_encaissement'].transform(lambda x: excel_to_sql_date(x))
-    df_commande['commande_date_perception'] = df_commande['commande_date_perception'].transform(lambda x: excel_to_sql_date(x))
-    df_commande['commande_date_remboursement'] = df_commande['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
+    for filepath in filepaths :
+        print(filepath)
+        df=pd.read_csv(filepath)
+        df_commande=select_commande(df)
+        df_commande['commande_date_soin'] = df_commande['commande_date_soin'].transform(lambda x: excel_to_sql_date(x))
+        df_commande['commande_date_achat'] = df_commande['commande_date_achat'].transform(lambda x: excel_to_sql_date(x))
+        df_commande['commande_date_encaissement'] = df_commande['commande_date_encaissement'].transform(lambda x: excel_to_sql_date(x))
+        df_commande['commande_date_perception'] = df_commande['commande_date_perception'].transform(lambda x: excel_to_sql_date(x))
+        df_commande['commande_date_remboursement'] = df_commande['commande_date_remboursement'].transform(lambda x: excel_to_sql_date(x))
 
-    df_commande=get_client_id(df_commande, conn) # recupere l'id des clients 
-    df_commande=get_commande_id(df_commande, conn) # recupere l'id des commandes
+        df_commande=get_client_id(df_commande, conn) # recupere l'id des clients 
+        df_commande=get_commande_id(df_commande, conn) # recupere l'id des commandes
 
-    df_commande=get_vendeur_id(df_commande, conn) # recupere l'id des vendeurs
-    df_commande=get_type_activite_id(df_commande, conn) # recupere l'id du type d'activite
-    df_commande=get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, conn) # recupere l'id de l'activite, cree une intervention exterieure si besoin
+        df_commande=get_vendeur_id(df_commande, conn) # recupere l'id des vendeurs
+        df_commande=get_type_activite_id(df_commande, conn) # recupere l'id du type d'activite
+        df_commande=get_activite_id(df_commande, id_type_intervention, id_vendeur_intervention, conn) # recupere l'id de l'activite, cree une intervention exterieure si besoin
 
-    add_new_command_activite(df_commande,conn) # ajoute les lignes dans la bdd
+        add_new_command_activite(df_commande,conn) # ajoute les lignes dans la bdd

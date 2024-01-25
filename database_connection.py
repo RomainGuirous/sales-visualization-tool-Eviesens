@@ -2,11 +2,12 @@ import pandas as pd
 from sqlalchemy import create_engine
 import sqlite3
 
-conn = create_engine('sqlite:///eviesens.db')
+
 
 
 def get_data() :
     #le dataframe de chaque table, extrait de la base de donnee
+    conn = create_engine('sqlite:///eviesens.db')
     df_table_vendeur= pd.read_sql_query('SELECT * FROM vendeur',conn)
     df_table_type_transaction= pd.read_sql_query('SELECT * FROM type_transaction',conn)
     df_table_type_structure= pd.read_sql_query('SELECT * FROM type_structure',conn)
@@ -33,6 +34,7 @@ def get_data() :
     return df_activite
 
 def get_type_activite() :
+    conn = create_engine('sqlite:///eviesens.db')
     return pd.read_sql_query('SELECT * FROM type_activite',conn)
 
 def create_database() :
@@ -179,8 +181,12 @@ def delete_database() :
     cursor.commit()
 
 def load_annee() :
+    conn = create_engine('sqlite:///eviesens.db')
     res=pd.read_sql_query('SELECT * FROM commande',conn)
     res['commande_date_achat']=pd.to_datetime(res['commande_date_achat'])
     res["annee"]=res['commande_date_achat'].dt.year
     res=res["annee"].drop_duplicates().to_list()
     return res
+
+
+
