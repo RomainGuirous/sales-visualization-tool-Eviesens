@@ -28,10 +28,10 @@ df_activite=dbc.get_data()
 # print(kpi.CA_annuel(df_activite,2023))
 
 # ## REVENU NET / AN (TABLEAU CHAQUE MOIS)
-print(kpi.revenu_net_annuel(df_activite,2023))
+# print(kpi.revenu_net_annuel(df_activite,2023))
 
 # ## CA ANNUEL / ANS
-print(kpi.CA_par_ans(df_activite))
+# print(kpi.CA_par_ans(df_activite))
 
 # # ## REVENU NET ANNUEL / ANS
 # print(kpi.revenu_net_par_ans(df_activite))
