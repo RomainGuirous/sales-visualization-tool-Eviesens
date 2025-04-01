@@ -1,3 +1,8 @@
+# sales-visualization-tool-Eviesens
+
+Ce projet a pour but d'utiliser des feuilles excel (ou CSV) préformatées (format préexistant) et en tirer des fraphiques selon certains KPI
+
+# instructions
 Version: python 3.12.1
 
 Mise en place:
@@ -20,4 +25,3 @@ Informations
 *) Lorsqu'un Remboursement est effectué, mettre une "Date soin", fictive, pour que la donnée soit lue
 
 *) Tableau colonnes Y,Z,AA,AB => ne jamais effacer de ligne (sauf si l'intitulé n'est pas proposé à la vente)
-
