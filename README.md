@@ -50,21 +50,36 @@ L'application propose plusieurs visualisations des données, telles que :
 
 ## Structure du Projet
 
-Projet_Stage_Eviesens/ 
-├── application.py # Interface utilisateur principale (Tkinter) 
-├── main.py # Point d'entrée pour exécuter l'application 
-├── kpi.py # Calcul des indicateurs clés de performance (KPI) 
-├── visualisation.py # Génération de graphiques pour les KPI 
-├── database_connection.py # Gestion de la base de données SQLite 
-├── read_activite.py # Lecture et traitement des fichiers d'activités 
-├── read_commande.py # Lecture et traitement des fichiers de commandes 
-├── read_commande_activite.py # Lecture des commandes liées aux activités 
-├── insert_client.py # Ajout des données clients à la base de données 
-├── create_temp_folder.py # Création de dossiers temporaires pour les fichiers Excel 
-├── eviesens.db # Base de données SQLite 
-├── README.md # Documentation du projet 
-├── requirements.txt # Liste des dépendances Python 
-├── donnees/ # Dossier contenant les fichiers d'entrée (CSV, Excel) 
+Projet_Stage_Eviesens/
+
+├── application.py # Interface utilisateur principale (Tkinter)
+
+├── main.py # Point d'entrée pour exécuter l'application
+
+├── kpi.py # Calcul des indicateurs clés de performance (KPI)
+
+├── visualisation.py # Génération de graphiques pour les KPI
+
+├── database_connection.py # Gestion de la base de données SQLite
+
+├── read_activite.py # Lecture et traitement des fichiers d'activités
+
+├── read_commande.py # Lecture et traitement des fichiers de commandes
+
+├── read_commande_activite.py # Lecture des commandes liées aux activités
+
+├── insert_client.py # Ajout des données clients à la base de données
+
+├── create_temp_folder.py # Création de dossiers temporaires pour les fichiers Excel
+
+├── eviesens.db # Base de données SQLite
+
+├── README.md # Documentation du projet
+
+├── requirements.txt # Liste des dépendances Python
+
+├── donnees/ # Dossier contenant les fichiers d'entrée (CSV, Excel)
+
 └── output/ # Dossier pour les fichiers générés par l'application
 
 ### Description des fichiers principaux
